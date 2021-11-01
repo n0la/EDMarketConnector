@@ -152,6 +152,12 @@ if __name__ == '__main__':  # noqa: C901
     )
 
     parser.add_argument(
+        '--no-capi',
+        help='Do not use CAPI',
+        action='store_true'
+    )
+
+    parser.add_argument(
         '--eddn-url',
         help='Specify an alternate EDDN upload URL',
     )
@@ -169,6 +175,11 @@ if __name__ == '__main__':  # noqa: C901
         import config as conf_module
         logger.info('Pretending CAPI is down')
         conf_module.capi_pretend_down = True
+
+    if args.no_capi:
+        import config as conf_module
+        logger.info('Not using CAPI')
+        conf_module.no_capi = True
 
     level_to_set: Optional[int] = None
     if args.trace or args.trace_on:
@@ -851,6 +862,12 @@ class AppWindow(object):
 
     def login(self):
         """Initiate CAPI/Frontier login and set other necessary state."""
+
+        import config as conf_module
+        if conf_module.no_capi:
+            logger.info("Not using CAPI")
+            return
+
         if not self.status['text']:
             # LANG: Status - Attempting to get a Frontier Auth Access Token
             self.status['text'] = _('Logging in...')
@@ -939,6 +956,11 @@ class AppWindow(object):
         auto_update = not event
         play_sound = (auto_update or int(event.type) == self.EVENT_VIRTUAL) and not config.get_int('hotkey_mute')
 
+        import config as conf_module
+        if conf_module.no_capi:
+            logger.info("Not using CAPI")
+            return
+
         if not monitor.cmdr:
             logger.trace_if('capi.worker', 'Aborting Query: Cmdr unknown')
             # LANG: CAPI queries aborted because Cmdr name is unknown
@@ -1005,6 +1027,11 @@ class AppWindow(object):
         logger.trace_if('capi.worker', 'Handling response')
         play_bad: bool = False
         err: Optional[str] = None
+
+        import config as conf_module
+        if conf_module.no_capi:
+            logger.info("Not using CAPI")
+            return
 
         capi_response: Union[companion.EDMCCAPIFailedRequest, companion.EDMCCAPIResponse]
         try:
