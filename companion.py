@@ -22,7 +22,6 @@ import urllib.parse
 import webbrowser
 from builtins import object, range, str
 from email.utils import parsedate
-from os.path import join
 from queue import Queue
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, OrderedDict, TypeVar, Union
 
@@ -30,7 +29,7 @@ import requests
 
 import config as conf_module
 import protocol
-from config import appname, appversion, config
+from config import config, user_agent
 from edmc_data import companion_category_map as category_map
 from EDMCLogging import get_main_logger
 from monitor import monitor
@@ -54,7 +53,6 @@ auth_timeout = 30  # timeout for initial auth
 
 # Used by both class Auth and Session
 FRONTIER_AUTH_SERVER = 'https://auth.frontierstore.net'
-USER_AGENT = f'EDCD-{appname}-{appversion()}'
 
 SERVER_LIVE = 'https://companion.orerve.net'
 SERVER_BETA = 'https://pts-companion.orerve.net'
@@ -265,6 +263,15 @@ class CredentialsError(Exception):
             self.args = (_('Error: Invalid Credentials'),)
 
 
+class CredentialsRequireRefresh(Exception):
+    """Exception Class for CAPI credentials requiring refresh."""
+
+    def __init__(self, *args) -> None:
+        self.args = args
+        if not args:
+            self.args = ('CAPI: Requires refresh of Access Token',)
+
+
 class CmdrError(Exception):
     """Exception Class for CAPI Commander error.
 
@@ -296,7 +303,7 @@ class Auth(object):
     def __init__(self, cmdr: str) -> None:
         self.cmdr: str = cmdr
         self.requests_session = requests.Session()
-        self.requests_session.headers['User-Agent'] = USER_AGENT
+        self.requests_session.headers['User-Agent'] = user_agent
         self.verifier: Union[bytes, None] = None
         self.state: Union[str, None] = None
 
@@ -334,6 +341,7 @@ class Auth(object):
 
             logger.debug('Attempting refresh with Frontier...')
             try:
+                r: Optional[requests.Response] = None
                 r = self.requests_session.post(
                     FRONTIER_AUTH_SERVER + self.FRONTIER_AUTH_PATH_TOKEN,
                     data=data,
@@ -351,9 +359,10 @@ class Auth(object):
                     logger.error(f"Frontier CAPI Auth: Can't refresh token for \"{self.cmdr}\"")
                     self.dump(r)
 
-            except (ValueError, requests.RequestException, ):
-                logger.exception(f"Frontier CAPI Auth: Can't refresh token for \"{self.cmdr}\"")
-                self.dump(r)
+            except (ValueError, requests.RequestException, ) as e:
+                logger.exception(f"Frontier CAPI Auth: Can't refresh token for \"{self.cmdr}\"\n{e!r}")
+                if r is not None:
+                    self.dump(r)
 
         else:
             logger.error(f"Frontier CAPI Auth: No token for \"{self.cmdr}\"")
@@ -633,7 +642,7 @@ class Session(object):
         logger.debug('Starting session')
         self.requests_session = requests.Session()
         self.requests_session.headers['Authorization'] = f'Bearer {access_token}'
-        self.requests_session.headers['User-Agent'] = USER_AGENT
+        self.requests_session.headers['User-Agent'] = user_agent
         self.state = Session.STATE_OK
 
     def login(self, cmdr: str = None, is_beta: Optional[bool] = None) -> bool:
@@ -750,7 +759,13 @@ class Session(object):
                 if conf_module.capi_pretend_down:
                     raise ServerConnectionError(f'Pretending CAPI down: {capi_endpoint}')
 
+                if conf_module.capi_debug_access_token is not None:
+                    self.requests_session.headers['Authorization'] = f'Bearer {conf_module.capi_debug_access_token}'  # type: ignore # noqa: E501
+                    # This is one-shot
+                    conf_module.capi_debug_access_token = None
+
                 r = self.requests_session.get(self.server + capi_endpoint, timeout=timeout)  # type: ignore
+
                 logger.trace_if('capi.worker', '... got result...')
                 r.raise_for_status()  # Typically 403 "Forbidden" on token expiry
                 # May also fail here if token expired since response is empty
@@ -772,9 +787,10 @@ class Session(object):
                 self.dump(r)
 
                 if r.status_code == 401:  # CAPI doesn't think we're Auth'd
+                    # TODO: This needs to try a REFRESH, not a full re-auth
                     # No need for translation, we'll go straight into trying new Auth
                     # and thus any message would be overwritten.
-                    raise CredentialsError('Frontier CAPI said Auth required') from e
+                    raise CredentialsRequireRefresh('Frontier CAPI said "unauthorized"') from e
 
                 if r.status_code == 418:  # "I'm a teapot" - used to signal maintenance
                     # LANG: Frontier CAPI returned 418, meaning down for maintenance
@@ -1048,7 +1064,7 @@ def fixup(data: CAPIData) -> CAPIData:  # noqa: C901, CCR001 # Can't be usefully
     if not commodity_map:
         # Lazily populate
         for f in ('commodity.csv', 'rare_commodity.csv'):
-            with open(join(config.respath_path, f), 'r') as csvfile:
+            with open(config.respath_path / 'FDevIDs' / f, 'r') as csvfile:
                 reader = csv.DictReader(csvfile)
 
                 for row in reader:
