@@ -18,6 +18,7 @@ __all__ = [
     'update_interval',
     'debug_senders',
     'trace_on',
+    'no_capi',
     'capi_pretend_down',
     'capi_debug_access_token',
     'logger',
@@ -64,6 +65,7 @@ debug_senders: List[str] = []
 # *all* if only interested in some things.
 trace_on: List[str] = []
 
+no_capi: bool = False
 capi_pretend_down: bool = False
 capi_debug_access_token: Optional[str] = None
 # This must be done here in order to avoid an import cycle with EDMCLogging.
