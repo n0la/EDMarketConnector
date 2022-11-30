@@ -20,9 +20,9 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.10.3"
+          python-version-file: '.python-version'
           architecture: "x86"
 
       - name: Install python tools
@@ -38,10 +38,10 @@ jobs:
 
       - name: Build EDMC
         run: |
-          python setup.py py2exe
+          python Build-exe-and-msi.py
 
       - name: Upload build files
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Built files
           path: EDMarketConnector_win*.msi
@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - name: Download binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Built files
           path: ./

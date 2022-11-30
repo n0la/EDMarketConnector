@@ -938,7 +938,7 @@ class AppWindow(object):
                     return False
 
             # Ignore possibly missing shipyard info
-            elif (config.get_int('output') & config.OUT_MKT_EDDN) \
+            elif (config.get_int('output') & config.OUT_EDDN_SEND_STATION_DATA) \
                     and not (data['lastStarport'].get('commodities') or data['lastStarport'].get('modules')):
                 if not self.status['text']:
                     # LANG: Status - Either no market or no modules data for station from Frontier CAPI
@@ -1125,6 +1125,11 @@ class AppWindow(object):
                     raise companion.NoMonitorStation()
 
                 self.capi_query_holdoff_time = capi_response.query_time + companion.capi_query_cooldown
+
+            elif capi_response.capi_data['lastStarport']['id'] != monitor.station_marketid:
+                logger.warning(f"MarketID mis-match: {capi_response.capi_data['lastStarport']['id']!r} !="
+                               f" {monitor.station_marketid!r}")
+                raise companion.ServerLagging()
 
             elif not monitor.state['OnFoot'] and capi_response.capi_data['ship']['id'] != monitor.state['ShipID']:
                 # CAPI ship must match

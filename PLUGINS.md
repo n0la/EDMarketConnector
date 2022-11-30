@@ -562,7 +562,7 @@ for an example of these techniques.
 ```python
 def journal_entry(
     cmdr: str, is_beta: bool, system: str, station: str, entry: Dict[str, Any], state: Dict[str, Any]
-) -> None:
+) -> Optional[str]:
     if entry['event'] == 'FSDJump':
         # We arrived at a new system!
         if 'StarPos' in entry:
@@ -617,6 +617,7 @@ Content of `state` (updated to the current journal entry):
 | `Modules`            |           `dict`            | Currently fitted modules                                                                                        |
 | `NavRoute`           |           `dict`            | Last plotted multi-hop route                                                                                    |
 | `ModuleInfo`         |           `dict`            | Last loaded ModulesInfo.json data                                                                               |
+| `IsDocked`           |           `bool`            | Whether the Cmdr is currently docked *in their own ship*.                                                       |
 | `OnFoot`             |           `bool`            | Whether the Cmdr is on foot                                                                                     |
 | `Component`          |           `dict`            | 'Component' MicroResources in Odyssey, `int` count each.                                                        |
 | `Item`               |           `dict`            | 'Item' MicroResources in Odyssey, `int` count each.                                                             |
@@ -698,6 +699,29 @@ New in version 5.1.1:
 `state` now has a `ShipLockerJSON` member containing the un-changed, loaded,
 JSON from the `ShipLockerJSON.json` file.
 
+New in version 5.4.2+:
+
+We now handle the 'Update 13' `NavRouteClear` event by detecting if that's what
+is in the `NavRoute.json` file.  If this is the case then we log that, **but
+do NOT clear `state['NavRoute']`**.  Plugins will get sent the Journal
+`NavRouteClear` event anyway, and there might be some value to them retaining
+access to the prior plotted route.
+
+NB: It *is* possible, if a player is quick enough, to plot and clear a route
+before we load it, in which case we'd be retaining the *previous* plotted
+route.
+
+New in version 5.6.0:
+
+`IsDocked` boolean added to `state`.  This is set True for a `Location` event
+having `"Docked":true"`, or the `Docked` event.  It is set back to False (its
+default value) for an `Undocked` event.  Being on-foot in a station at login
+time does *not* count as docked for this.
+
+In general on-foot, including being in a taxi, might not set this 100%
+correctly.  Its main use in core code is to detect being docked so as to send
+any stored EDDN messages due to "Delay sending until docked" option.
+
 ___
 
 ##### Synthetic Events
@@ -767,7 +791,7 @@ Examples of this are:
 ### Journal entry in CQC
 New in version 5.2.0
 ```python
-def journal_entry_cqc(cmdr: str, is_beta: bool, entry: Dict[str, Any], state: Dict[str, Any]) -> None:
+def journal_entry_cqc(cmdr: str, is_beta: bool, entry: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]:
     if entry['event'] == 'Location':
         # We loaded to CQC match, lets detect map!
         cqc_maps = {  # dict to map systems names to CQC maps, ref: https://forums.frontier.co.uk/threads/cqc-systems.234394/

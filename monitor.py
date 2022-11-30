@@ -21,6 +21,8 @@ from typing import Tuple
 if TYPE_CHECKING:
     import tkinter
 
+import semantic_version
+
 import util_ships
 from config import config
 from edmc_data import edmc_suit_shortnames, edmc_suit_symbol_localised
@@ -31,6 +33,7 @@ from EDMCLogging import get_main_logger
 logger = get_main_logger()
 STARTUP = 'journal.startup'
 MAX_NAVROUTE_DISCREPANCY = 5  # Timestamp difference in seconds
+MAX_FCMATERIALS_DISCREPANCY = 5  # Timestamp difference in seconds
 
 if TYPE_CHECKING:
     def _(x: str) -> str:
@@ -110,6 +113,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         # Context for journal handling
         self.version: Optional[str] = None
+        self.version_semantic: Optional[semantic_version.Version] = None
         self.is_beta = False
         self.mode: Optional[str] = None
         self.group: Optional[str] = None
@@ -126,6 +130,14 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         self._navroute_retries_remaining = 0
         self._last_navroute_journal_timestamp: Optional[float] = None
+
+        self._fcmaterials_retries_remaining = 0
+        self._last_fcmaterials_journal_timestamp: Optional[float] = None
+
+        # For determining Live versus Legacy galaxy.
+        # The assumption is gameversion will parse via `coerce()` and always
+        # be >= for Live, and < for Legacy.
+        self.live_galaxy_base_version = semantic_version.Version('4.0.0')
 
         self.__init_state()
 
@@ -162,6 +174,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
             'Modules':            None,
             'CargoJSON':          None,  # The raw data from the last time cargo.json was read
             'Route':              None,  # Last plotted route from Route.json file
+            'IsDocked':           False,  # Whether we think cmdr is docked
             'OnFoot':             False,  # Whether we think you're on-foot
             'Component':          defaultdict(int),      # Odyssey Components in Ship Locker
             'Item':               defaultdict(int),      # Odyssey Items in Ship Locker
@@ -289,6 +302,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         self.currentdir = None
         self.version = None
+        self.version_semantic = None
         self.mode = None
         self.group = None
         self.cmdr = None
@@ -302,6 +316,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
         self.systemaddress = None
         self.is_beta = False
         self.state['OnFoot'] = False
+        self.state['IsDocked'] = False
         self.state['Body'] = None
         self.state['BodyType'] = None
 
@@ -721,6 +736,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                 self.station_marketid = None
                 self.stationtype = None
                 self.stationservices = None
+                self.state['IsDocked'] = False
 
             elif event_type == 'embark':
                 # This event is logged when a player (on foot) gets into a ship or SRV
@@ -787,6 +803,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                 self.state['Dropship'] = False
 
             elif event_type == 'docked':
+                self.state['IsDocked'] = True
                 self.station = entry.get('StationName')  # May be None
                 self.station_marketid = entry.get('MarketID')  # May be None
                 self.stationtype = entry.get('StationType')  # May be None
@@ -809,6 +826,8 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
                     if event_type == 'location':
                         logger.trace_if('journal.locations', '"Location" event')
+                        if entry.get('Docked'):
+                            self.state['IsDocked'] = True
 
                 elif event_type == 'fsdjump':
                     self.planet = None
@@ -1360,6 +1379,16 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                 if self.__navroute_retry():
                     entry = self.state['NavRoute']
 
+            elif event_type == 'fcmaterials' and not self.catching_up:
+                # assume we've failed out the gate, then pull it back if things are fine
+                self._last_fcmaterials_journal_timestamp = mktime(strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+                self._fcmaterials_retries_remaining = 11
+
+                # Added in ED 4.0.0.1300 - Fleet Carrier Materials market in FCMaterials.json
+                # rather than duplicating this, lets just call the function
+                if fcmaterials := self.__fcmaterials_retry():
+                    entry = fcmaterials
+
             elif event_type == 'moduleinfo':
                 with open(join(self.currentdir, 'ModulesInfo.json'), 'rb') as mf:  # type: ignore
                     try:
@@ -1455,7 +1484,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                                 self.state[category].pop(material)
 
                 module = self.state['Modules'][entry['Slot']]
-                assert(module['Item'] == self.canonicalise(entry['Module']))
+                assert module['Item'] == self.canonicalise(entry['Module'])
                 module['Engineering'] = {
                     'Engineer':      entry['Engineer'],
                     'EngineerID':    entry['EngineerID'],
@@ -1663,6 +1692,20 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
             self.state['GameVersion'] = entry['gameversion']
             self.state['GameBuild'] = entry['build']
             self.version = self.state['GameVersion']
+
+            try:
+                self.version_semantic = semantic_version.Version.coerce(self.state['GameVersion'])
+
+            except Exception:
+                # Catching all Exceptions as this is *one* call, and we won't
+                # get caught out by any semantic_version changes.
+                self.version_semantic = None
+                logger.error(f"Couldn't coerce {self.state['GameVersion']=}")
+                pass
+
+            else:
+                logger.info(f"Parsed {self.state['GameVersion']=} into {self.version_semantic=}")
+
             self.is_beta = any(v in self.version.lower() for v in ('alpha', 'beta'))  # type: ignore
         except KeyError:
             if not suppress:
@@ -2227,6 +2270,32 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         return data
 
+    def _parse_fcmaterials_file(self) -> Optional[dict[str, Any]]:
+        """Read and parse FCMaterials.json."""
+        if self.currentdir is None:
+            raise ValueError('currentdir unset')
+
+        try:
+
+            with open(join(self.currentdir, 'FCMaterials.json'), 'r') as f:
+                raw = f.read()
+
+        except Exception as e:
+            logger.exception(f'Could not open FCMaterials file. Bailing: {e}')
+            return None
+
+        try:
+            data = json.loads(raw)
+
+        except json.JSONDecodeError:
+            logger.exception('Failed to decode FCMaterials.json', exc_info=True)
+            return None
+
+        if 'timestamp' not in data:  # quick sanity check
+            return None
+
+        return data
+
     @staticmethod
     def _parse_journal_timestamp(source: str) -> float:
         return mktime(strptime(source, '%Y-%m-%dT%H:%M:%SZ'))
@@ -2260,12 +2329,72 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
             )
             return False
 
-        # everything is good, lets set what we need to and make sure we dont try again
-        logger.info('Successfully read NavRoute file for last NavRoute event.')
-        self.state['NavRoute'] = file
+        # Handle it being `NavRouteClear`d already
+        if file['event'].lower() == 'navrouteclear':
+            logger.info('NavRoute file contained a NavRouteClear')
+            # We do *NOT* copy into/clear the `self.state['NavRoute']`
+        else:
+            # everything is good, lets set what we need to and make sure we dont try again
+            logger.info('Successfully read NavRoute file for last NavRoute event.')
+            self.state['NavRoute'] = file
+
         self._navroute_retries_remaining = 0
         self._last_navroute_journal_timestamp = None
         return True
+
+    def __fcmaterials_retry(self) -> Optional[Dict[str, Any]]:
+        """Retry reading FCMaterials files."""
+        if self._fcmaterials_retries_remaining == 0:
+            return None
+
+        logger.debug(f'FCMaterials read retry [{self._fcmaterials_retries_remaining}]')
+        self._fcmaterials_retries_remaining -= 1
+
+        if self._last_fcmaterials_journal_timestamp is None:
+            logger.critical('Asked to retry for FCMaterials but also no set time to compare? This is a bug.')
+            return None
+
+        if (file := self._parse_fcmaterials_file()) is None:
+            logger.debug(
+                'Failed to parse FCMaterials.json. '
+                + ('Trying again' if self._fcmaterials_retries_remaining > 0 else 'Giving up')
+            )
+            return None
+
+        # _parse_fcmaterials_file verifies that this exists for us
+        file_time = self._parse_journal_timestamp(file['timestamp'])
+        if abs(file_time - self._last_fcmaterials_journal_timestamp) > MAX_FCMATERIALS_DISCREPANCY:
+            logger.debug(
+                f'Time discrepancy of more than {MAX_FCMATERIALS_DISCREPANCY}s --'
+                f' ({abs(file_time - self._last_fcmaterials_journal_timestamp)}).'
+                f' {"Trying again" if self._fcmaterials_retries_remaining > 0 else "Giving up"}.'
+            )
+            return None
+
+        # everything is good, lets set what we need to and make sure we dont try again
+        logger.info('Successfully read FCMaterials file for last FCMaterials event.')
+        self._fcmaterials_retries_remaining = 0
+        self._last_fcmaterials_journal_timestamp = None
+        return file
+
+    def is_live_galaxy(self) -> bool:
+        """
+        Indicate if current tracking indicates Live galaxy.
+
+        We assume:
+         1) `gameversion` remains something that semantic_verison.Version.coerce() can parse.
+         2) Any Live galaxy client reports a version >= the defined base version.
+         3) Any Legacy client will always report a version < that base version.
+        :return: True for Live, False for Legacy or unknown.
+        """
+        # If we don't yet know the version we can't tell, so assume the worst
+        if self.version_semantic is None:
+            return False
+
+        if self.version_semantic >= self.live_galaxy_base_version:
+            return True
+
+        return False
 
 
 # singleton
