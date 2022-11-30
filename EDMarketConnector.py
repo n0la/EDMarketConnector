@@ -154,6 +154,7 @@ if __name__ == '__main__':  # noqa: C901
     parser.add_argument(
         '--no-capi',
         help='Do not use CAPI',
+        action='store_true',
     )
 
     parser.add_argument(
