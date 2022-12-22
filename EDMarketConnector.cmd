@@ -1,1 +1,1 @@
-python3 ./EDMarketConnector.py --no-capi
+python ./EDMarketConnector.py --no-capi
