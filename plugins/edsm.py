@@ -1,4 +1,4 @@
-"""System display and EDSM lookup."""
+"""Show EDSM data in display and handle lookups."""
 
 # TODO:
 #  1) Re-factor EDSM API calls out of journal_entry() into own function.
@@ -24,9 +24,9 @@
 # Thus you **MUST** check if any imports you add in this file are only
 # referenced in this file (or only in any other core plugin), and if so...
 #
-#     YOU MUST ENSURE THAT PERTINENT ADJUSTMENTS ARE MADE IN `setup.py`
-#     SO AS TO ENSURE THE FILES ARE ACTUALLY PRESENT IN AN END-USER
-#     INSTALLATION ON WINDOWS.
+#     YOU MUST ENSURE THAT PERTINENT ADJUSTMENTS ARE MADE IN
+#     `Build-exe-and-msi.py` SO AS TO ENSURE THE FILES ARE ACTUALLY PRESENT IN
+#     AN END-USER INSTALLATION ON WINDOWS.
 #
 #
 # ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $#
@@ -34,6 +34,7 @@
 import json
 import threading
 import tkinter as tk
+from datetime import datetime, timedelta, timezone
 from queue import Queue
 from threading import Thread
 from time import sleep
@@ -42,6 +43,7 @@ from typing import TYPE_CHECKING, Any, List, Literal, Mapping, MutableMapping, O
 import requests
 
 import killswitch
+import monitor
 import myNotebook as nb  # noqa: N813
 import plug
 from companion import CAPIData
@@ -73,6 +75,9 @@ class This:
 
         self.game_version = ""
         self.game_build = ""
+
+        # Handle only sending Live galaxy data
+        self.legacy_galaxy_last_notified: Optional[datetime] = None
 
         self.session: requests.Session = requests.Session()
         self.session.headers['User-Agent'] = user_agent
@@ -149,7 +154,13 @@ plEAADs=
 
 # Main window clicks
 def system_url(system_name: str) -> str:
-    """Get a URL for the current system."""
+    """
+    Construct an appropriate EDSM URL for the provided system.
+
+    :param system_name: Will be overridden with `this.system_address` if that
+      is set.
+    :return: The URL, empty if no data was available to construct it.
+    """
     if this.system_address:
         return requests.utils.requote_uri(f'https://www.edsm.net/en/system?systemID64={this.system_address}')
 
@@ -160,7 +171,13 @@ def system_url(system_name: str) -> str:
 
 
 def station_url(system_name: str, station_name: str) -> str:
-    """Get a URL for the current station."""
+    """
+    Construct an appropriate EDSM URL for a station.
+
+    :param system_name: Name of the system the station is in.
+    :param station_name: Name of the station.
+    :return: The URL, empty if no data was available to construct it.
+    """
     if system_name and station_name:
         return requests.utils.requote_uri(
             f'https://www.edsm.net/en/system?systemName={system_name}&stationName={station_name}'
@@ -181,7 +198,12 @@ def station_url(system_name: str, station_name: str) -> str:
 
 
 def plugin_start3(plugin_dir: str) -> str:
-    """Plugin setup hook."""
+    """
+    Start the plugin.
+
+    :param plugin_dir: NAme of directory this was loaded from.
+    :return: Identifier string for this plugin.
+    """
     # Can't be earlier since can only call PhotoImage after window is created
     this._IMG_KNOWN = tk.PhotoImage(data=IMG_KNOWN_B64)  # green circle
     this._IMG_UNKNOWN = tk.PhotoImage(data=IMG_UNKNOWN_B64)  # red circle
@@ -220,7 +242,12 @@ def plugin_start3(plugin_dir: str) -> str:
 
 
 def plugin_app(parent: tk.Tk) -> None:
-    """Plugin UI setup."""
+    """
+    Construct this plugin's main UI, if any.
+
+    :param parent: The tk parent to place our widgets into.
+    :return: See PLUGINS.md#display
+    """
     this.system_link = parent.children['system']  # system label in main window
     this.system_link.bind_all('<<EDSMStatus>>', update_status)
     this.station_link = parent.children['station']  # station label in main window
@@ -241,7 +268,17 @@ def plugin_stop() -> None:
 
 
 def plugin_prefs(parent: tk.Tk, cmdr: str, is_beta: bool) -> tk.Frame:
-    """Plugin preferences setup hook."""
+    """
+    Plugin preferences setup hook.
+
+    Any tkinter UI set up *must* be within an instance of `myNotebook.Frame`,
+    which is the return value of this function.
+
+    :param parent: tkinter Widget to place items in.
+    :param cmdr: Name of Commander.
+    :param is_beta: Whether game beta was detected.
+    :return: An instance of `myNotebook.Frame`.
+    """
     PADX = 10  # noqa: N806
     BUTTONX = 12  # indent Checkbuttons and Radiobuttons # noqa: N806
     PADY = 2		# close spacing # noqa: N806
@@ -308,7 +345,12 @@ def plugin_prefs(parent: tk.Tk, cmdr: str, is_beta: bool) -> tk.Frame:
 
 
 def prefs_cmdr_changed(cmdr: str, is_beta: bool) -> None:
-    """Commanders changed hook."""
+    """
+    Handle the Commander name changing whilst Settings was open.
+
+    :param cmdr: The new current Commander name.
+    :param is_beta: Whether game beta was detected.
+    """
     this.log_button['state'] = tk.NORMAL if cmdr and not is_beta else tk.DISABLED
     this.user['state'] = tk.NORMAL
     this.user.delete(0, tk.END)
@@ -334,7 +376,7 @@ def prefs_cmdr_changed(cmdr: str, is_beta: bool) -> None:
 
 
 def prefsvarchanged() -> None:
-    """Preferences screen closed hook."""
+    """Handle the 'Send data to EDSM' tickbox changing state."""
     to_set = tk.DISABLED
     if this.log.get():
         to_set = this.log_button['state']
@@ -358,7 +400,12 @@ def set_prefs_ui_states(state: str) -> None:
 
 
 def prefs_changed(cmdr: str, is_beta: bool) -> None:
-    """Preferences changed hook."""
+    """
+    Handle any changes to Settings once the dialog is closed.
+
+    :param cmdr: Name of Commander.
+    :param is_beta: Whether game beta was detected.
+    """
     config.set('edsm_out', this.log.get())
 
     if cmdr and not is_beta:
@@ -420,20 +467,30 @@ def credentials(cmdr: str) -> Optional[Tuple[str, str]]:
 
 def journal_entry(  # noqa: C901, CCR001
     cmdr: str, is_beta: bool, system: str, station: str, entry: MutableMapping[str, Any], state: Mapping[str, Any]
-) -> None:
-    """Journal Entry hook."""
+) -> str:
+    """
+    Handle a new Journal event.
+
+    :param cmdr: Name of Commander.
+    :param is_beta: Whether game beta was detected.
+    :param system: Name of current tracked system.
+    :param station: Name of current tracked station location.
+    :param entry: The journal event.
+    :param state: `monitor.state`
+    :return: None if no error, else an error string.
+    """
     should_return, new_entry = killswitch.check_killswitch('plugins.edsm.journal', entry, logger)
     if should_return:
         # LANG: EDSM plugin - Journal handling disabled by killswitch
         plug.show_error(_('EDSM Handler disabled. See Log.'))
-        return
+        return ''
 
     should_return, new_entry = killswitch.check_killswitch(
         f'plugins.edsm.journal.event.{entry["event"]}', data=new_entry, log=logger
     )
 
     if should_return:
-        return
+        return ''
 
     this.game_version = state['GameVersion']
     this.game_build = state['GameBuild']
@@ -530,6 +587,21 @@ entry: {entry!r}'''
 
     # Queue all events to send to EDSM.  worker() will take care of dropping EDSM discarded events
     if config.get_int('edsm_out') and not is_beta and not this.multicrew and credentials(cmdr):
+        if not monitor.monitor.is_live_galaxy():
+            logger.info("EDSM only accepts Live galaxy data")
+            # Since Update 14 on 2022-11-29 Inara only accepts Live data.
+            if (
+                this.legacy_galaxy_last_notified is None
+                or (datetime.now(timezone.utc) - this.legacy_galaxy_last_notified) > timedelta(seconds=300)
+            ):
+                # LANG: The Inara API only accepts Live galaxy data, not Legacy galaxy data
+                logger.info("EDSM only accepts Live galaxy data")
+                # this.parent.children['status']['text'] =
+                this.legacy_galaxy_last_notified = datetime.now(timezone.utc)
+                return _("EDSM only accepts Live galaxy data")
+
+            return ''
+
         # Introduce transient states into the event
         transient = {
             '_systemName': system,
@@ -563,10 +635,18 @@ Queueing: {entry!r}'''
 
         this.queue.put((cmdr, this.game_version, this.game_build, entry))
 
+    return ''
+
 
 # Update system data
-def cmdr_data(data: CAPIData, is_beta: bool) -> None:
-    """CAPI Entry Hook."""
+def cmdr_data(data: CAPIData, is_beta: bool) -> Optional[str]:
+    """
+    Process new CAPI data.
+
+    :param data: The latest merged CAPI data.
+    :param is_beta: Whether game beta was detected.
+    :return: Optional error string.
+    """
     system = data['lastSystem']['name']
 
     # Always store initially, even if we're not the *current* system provider.
@@ -607,6 +687,8 @@ def cmdr_data(data: CAPIData, is_beta: bool) -> None:
         this.system_link['text'] = system
         this.system_link['image'] = ''
         this.system_link.update_idletasks()
+
+    return ''
 
 
 TARGET_URL = 'https://www.edsm.net/api-journal-v1'

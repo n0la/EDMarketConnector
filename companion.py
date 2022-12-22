@@ -44,9 +44,6 @@ else:
     UserDict = collections.UserDict  # type: ignore # Otherwise simply use the actual class
 
 
-# Define custom type for the dicts that hold CAPI data
-# CAPIData = NewType('CAPIData', Dict)
-
 capi_query_cooldown = 60  # Minimum time between (sets of) CAPI queries
 capi_default_requests_timeout = 10
 auth_timeout = 30  # timeout for initial auth
@@ -55,6 +52,7 @@ auth_timeout = 30  # timeout for initial auth
 FRONTIER_AUTH_SERVER = 'https://auth.frontierstore.net'
 
 SERVER_LIVE = 'https://companion.orerve.net'
+SERVER_LEGACY = 'https://legacy-companion.orerve.net'
 SERVER_BETA = 'https://pts-companion.orerve.net'
 
 commodity_map: Dict = {}
@@ -65,24 +63,29 @@ class CAPIData(UserDict):
 
     def __init__(
             self,
-            data: Union[str, Dict[str, Any], 'CAPIData', None] = None, source_endpoint: str = None
+            data: Union[str, Dict[str, Any], 'CAPIData', None] = None,
+            source_host: Optional[str] = None,
+            source_endpoint: Optional[str] = None
     ) -> None:
         if data is None:
             super().__init__()
+
         elif isinstance(data, str):
             super().__init__(json.loads(data))
+
         else:
             super().__init__(data)
 
         self.original_data = self.data.copy()  # Just in case
 
+        self.source_host = source_host
         self.source_endpoint = source_endpoint
 
         if source_endpoint is None:
             return
 
         if source_endpoint == Session.FRONTIER_CAPI_PATH_SHIPYARD and self.data.get('lastStarport'):
-            # All the other endpoints may or may not have a lastStarport, but definitely wont have valid data
+            # All the other endpoints may or may not have a lastStarport, but definitely won't have valid data
             # for this check, which means it'll just make noise for no reason while we're working on other things
             self.check_modules_ships()
 
@@ -556,7 +559,8 @@ class EDMCCAPIRequest(EDMCCAPIReturn):
     REQUEST_WORKER_SHUTDOWN = '__EDMC_WORKER_SHUTDOWN'
 
     def __init__(
-        self, endpoint: str, query_time: int,
+        self, capi_host: str, endpoint: str,
+        query_time: int,
         tk_response_event: Optional[str] = None,
         play_sound: bool = False, auto_update: bool = False
     ):
@@ -564,6 +568,7 @@ class EDMCCAPIRequest(EDMCCAPIReturn):
             query_time=query_time, tk_response_event=tk_response_event,
             play_sound=play_sound, auto_update=auto_update
         )
+        self.capi_host: str = capi_host  # The CAPI host to use.
         self.endpoint: str = endpoint  # The CAPI query to perform.
 
 
@@ -605,7 +610,6 @@ class Session(object):
 
     def __init__(self) -> None:
         self.state = Session.STATE_INIT
-        self.server: Optional[str] = None
         self.credentials: Optional[Dict[str, Any]] = None
         self.requests_session: Optional[requests.Session] = None
         self.auth: Optional[Auth] = None
@@ -645,7 +649,7 @@ class Session(object):
         self.requests_session.headers['User-Agent'] = user_agent
         self.state = Session.STATE_OK
 
-    def login(self, cmdr: str = None, is_beta: Optional[bool] = None) -> bool:
+    def login(self, cmdr: Optional[str] = None, is_beta: Optional[bool] = None) -> bool:
         """
         Attempt oAuth2 login.
 
@@ -679,7 +683,6 @@ class Session(object):
                 self.close()
                 self.credentials = credentials
 
-        self.server = self.credentials['beta'] and SERVER_BETA or SERVER_LIVE
         self.state = Session.STATE_INIT
         self.auth = Auth(self.credentials['cmdr'])
 
@@ -743,12 +746,15 @@ class Session(object):
         """Worker thread that performs actual CAPI queries."""
         logger.debug('CAPI worker thread starting')
 
-        def capi_single_query(  # noqa: CCR001
-            capi_endpoint: str, timeout: int = capi_default_requests_timeout
+        def capi_single_query(
+            capi_host: str,
+            capi_endpoint: str,
+            timeout: int = capi_default_requests_timeout
         ) -> CAPIData:
             """
             Perform a *single* CAPI endpoint query within the thread worker.
 
+            :param capi_host: CAPI host to query.
             :param capi_endpoint: An actual Frontier CAPI endpoint to query.
             :param timeout: requests query timeout to use.
             :return: The resulting CAPI data, of type CAPIData.
@@ -764,7 +770,7 @@ class Session(object):
                     # This is one-shot
                     conf_module.capi_debug_access_token = None
 
-                r = self.requests_session.get(self.server + capi_endpoint, timeout=timeout)  # type: ignore
+                r = self.requests_session.get(capi_host + capi_endpoint, timeout=timeout)  # type: ignore
 
                 logger.trace_if('capi.worker', '... got result...')
                 r.raise_for_status()  # Typically 403 "Forbidden" on token expiry
@@ -772,7 +778,7 @@ class Session(object):
                 # r.status_code = 401
                 # raise requests.HTTPError
                 capi_json = r.json()
-                capi_data = CAPIData(capi_json, capi_endpoint)
+                capi_data = CAPIData(capi_json, capi_host, capi_endpoint)
                 self.capi_raw_data.record_endpoint(
                     capi_endpoint, r.content.decode(encoding='utf-8'),
                     datetime.datetime.utcnow()
@@ -818,7 +824,9 @@ class Session(object):
 
             return capi_data
 
-        def capi_station_queries(timeout: int = capi_default_requests_timeout) -> CAPIData:  # noqa: CCR001
+        def capi_station_queries(  # noqa: CCR001
+            capi_host: str, timeout: int = capi_default_requests_timeout
+        ) -> CAPIData:
             """
             Perform all 'station' queries for the caller.
 
@@ -831,7 +839,7 @@ class Session(object):
             :param timeout: requests timeout to use.
             :return: CAPIData instance with what we retrieved.
             """
-            station_data = capi_single_query(self.FRONTIER_CAPI_PATH_PROFILE, timeout=timeout)
+            station_data = capi_single_query(capi_host, self.FRONTIER_CAPI_PATH_PROFILE, timeout=timeout)
 
             if not station_data['commander'].get('docked') and not monitor.state['OnFoot']:
                 return station_data
@@ -872,7 +880,7 @@ class Session(object):
             last_starport_id = int(last_starport.get('id'))
 
             if services.get('commodities'):
-                market_data = capi_single_query(self.FRONTIER_CAPI_PATH_MARKET, timeout=timeout)
+                market_data = capi_single_query(capi_host, self.FRONTIER_CAPI_PATH_MARKET, timeout=timeout)
                 if last_starport_id != int(market_data['id']):
                     logger.warning(f"{last_starport_id!r} != {int(market_data['id'])!r}")
                     raise ServerLagging()
@@ -882,7 +890,7 @@ class Session(object):
                     station_data['lastStarport'].update(market_data)
 
             if services.get('outfitting') or services.get('shipyard'):
-                shipyard_data = capi_single_query(self.FRONTIER_CAPI_PATH_SHIPYARD, timeout=timeout)
+                shipyard_data = capi_single_query(capi_host, self.FRONTIER_CAPI_PATH_SHIPYARD, timeout=timeout)
                 if last_starport_id != int(shipyard_data['id']):
                     logger.warning(f"{last_starport_id!r} != {int(shipyard_data['id'])!r}")
                     raise ServerLagging()
@@ -906,13 +914,12 @@ class Session(object):
                 break
 
             logger.trace_if('capi.worker', f'Processing query: {query.endpoint}')
-            capi_data: CAPIData
             try:
                 if query.endpoint == self._CAPI_PATH_STATION:
-                    capi_data = capi_station_queries()
+                    capi_data = capi_station_queries(query.capi_host)
 
                 else:
-                    capi_data = capi_single_query(self.FRONTIER_CAPI_PATH_PROFILE)
+                    capi_data = capi_single_query(query.capi_host, self.FRONTIER_CAPI_PATH_PROFILE)
 
             except Exception as e:
                 self.capi_response_queue.put(
@@ -936,7 +943,7 @@ class Session(object):
                 )
 
             # If the query came from EDMC.(py|exe) there's no tk to send an
-            # event too, so assume it will be polling there response queue.
+            # event too, so assume it will be polling the response queue.
             if query.tk_response_event is not None:
                 logger.trace_if('capi.worker', 'Sending <<CAPIResponse>>')
                 self.tk_master.event_generate('<<CAPIResponse>>')
@@ -947,6 +954,7 @@ class Session(object):
         """Ask the CAPI query thread to finish."""
         self.capi_request_queue.put(
             EDMCCAPIRequest(
+                capi_host='',
                 endpoint=EDMCCAPIRequest.REQUEST_WORKER_SHUTDOWN,
                 query_time=int(time.time())
             )
@@ -964,10 +972,15 @@ class Session(object):
         :param play_sound: Whether the app should play a sound on error.
         :param auto_update: Whether this request was triggered automatically.
         """
+        capi_host = self.capi_host_for_galaxy()
+        if not capi_host:
+            return
+
         # Ask the thread worker to perform all three queries
         logger.trace_if('capi.worker', 'Enqueueing request')
         self.capi_request_queue.put(
             EDMCCAPIRequest(
+                capi_host=capi_host,
                 endpoint=self._CAPI_PATH_STATION,
                 tk_response_event=tk_response_event,
                 query_time=query_time,
@@ -1048,6 +1061,33 @@ class Session(object):
                                    indent=2,
                                    sort_keys=True,
                                    separators=(',', ': ')).encode('utf-8'))
+
+    def capi_host_for_galaxy(self) -> str:
+        """
+        Determine the correct CAPI host.
+
+        This is based on the current state of beta and game galaxy.
+
+        :return: The required CAPI host.
+        """
+        if self.credentials is None:
+            # Can't tell if beta or not
+            logger.warning("Dropping CAPI request because unclear if game beta or not")
+            return ''
+
+        if self.credentials['beta']:
+            logger.debug(f"Using {SERVER_BETA} because {self.credentials['beta']=}")
+            return SERVER_BETA
+
+        if monitor.is_live_galaxy():
+            logger.debug(f"Using {SERVER_LIVE} because monitor.is_live_galaxy() was True")
+            return SERVER_LIVE
+
+        else:
+            logger.debug(f"Using {SERVER_LEGACY} because monitor.is_live_galaxy() was False")
+            return SERVER_LEGACY
+
+        return ''
     ######################################################################
 
 

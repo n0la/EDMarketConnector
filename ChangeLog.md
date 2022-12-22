@@ -9,7 +9,7 @@ produce the Windows executables and installer.
 
 ---
 
-* We now test against, and package with, Python 3.10.8.
+* We now test against, and package with, Python 3.11.1, 32-bit.
 
   **As a consequence of this we no longer support Windows 7.  
   This is due to
@@ -27,10 +27,191 @@ produce the Windows executables and installer.
 
 ---
 
+Release 5.7.0
+===
+This release re-enables CAPI queries for Legacy players.  As a result, the
+'Update' button functionality is now restored for Legacy players, along with
+"Automatically update on docking" functionality.
+
+* We now test against, and package with, Python 3.11.1, 32-bit.
+
+* This release is functionally identical to 5.7.0-rc1, as no problems were
+  reported with that.
+
+* As noted above, Legacy players now have CAPI functionality once more.
+  Plugin developers check below for how you can determine the source galaxy
+  of such data.
+
+* Due to a bug it turned out that a workaround for "old browsers don't support
+  very long URLs" had been inactive since late 2019.  As no-one has noticed
+  or complained we've now removed the defunct code in favour of the simple
+  `webbrowser.open(<url>)`.
+
+  Testing showed that all of Firefox, Chrome and Chrome-based Edge worked with
+  very long URLs without issues.
+
+* `EDMC.exe -n` had been broken for a while, it now functions once more.
+
+* Some output related to detecting and parsing `gameversion` from Journals
+  has been moved from INFO to DEBUG.  This returns the output of any `EDMC.exe`
+  command to the former, quieter, version.
+
+Bugs
+---
+* A corner case of "game not running" and "user presses 'Update' button" would
+  result in an empty `uploaderID` string being sent to EDDN.  Such messages are
+  still accepted by the EDDN Gateway, and the Relay then obfuscates this field
+  anyway.  So, at worse, this would make it look like the same uploader was in
+  lots of different places.  This has been fixed.
+
+* The message about converting legacy `replay.jsonl` was being emitted even
+  when there was no file to convert.  This has been fixed.
+
+Plugin Developers
+---
+* An erroneous statement about "all of Python stdlib" in PLUGINS.md has been
+  corrected.  We don't/can't easily include all of this.  Ask if any part of it
+  you require is missing.
+
+* In order to not pass Legacy data to plugins without them being aware of it
+  there is now a new function `cmdr_data_legacy()`, which mirrors the
+  functionality of `cmdr_data()`, but for Legacy data only.  See PLUGINS.md
+  for more details.
+
+* The `data` passed to `cmdr_data()` and `cmdr_data_legacy()` is now correctly
+  typed as `CAPIData`.  This is a sub-class of `UserDict`, so you can continue
+  to use it as such.  However, it also has one extra property, `source_host`,
+  which can be used to determine if the data was from the Live or Legacy
+  CAPI endpoint host.  See PLUGINS.md for more details.
+
+* If any plugin had been attempting to make use of `config.get_int('theme')`,
+  then be aware that we've finally moved from hard-coded values to actual
+  defined constants.  Example use would be as in:
+  ```python
+  from config import config
+  from theme import theme
+  
+  active_theme = config.get_int('theme')
+  if active_theme == theme.THEME_DARK:
+      ...
+  elif active_theme == theme.THEME_TRANSPARENT:
+      ...
+  elif active_theme == theme.THEME_DEFAULT:
+      ...
+  else:
+      ...
+  ```
+  But remember that all tkinter widgets in plugins will inherit the main UI
+  current theme colours anyway.
+
+* The contents of `NavRoute.json` will now be loaded during 'catch-up' when
+  EDMarketConnector is (re-)started.  The synthetic `StartUp` (note the 
+  capitalisation) event that is emitted after the catch-up ends will have
+  `state['NavRoute']` containing this data.
+
+  However, the `Fileheader` event from detecting a subsequent new Journal file
+  *will* blank this data again.  Thus, if you're interested in "last plotted
+  route" on startup you should react to the `StartUp` event.  Also, note that
+  the contents *will* indicate a `NavRouteClear` if that was the last such
+  event.
+
+  PLUGINS.md has been updated to reflect this.
+
+* If you've ever been in the habit of running our `develop` branch, please
+  don't.  Whilst we try to ensure that any code merged into this branch doesn't
+  contain bugs, it hasn't at that point undergone more thorough testing.
+  Please use the `stable` branch unless otherwise directed.
+
+* Some small updates have been made in `edmc_data` as a part of reviewing the
+  latest update to `coriolis-data`.
+  We make no guarantee about keeping these parts of `edmc_data` up to date.
+  Any plugins attempting to use that data should look at alternatives, such
+  as [FDevIDs/outfitting.csv](https://github.com/EDCD/FDevIDs/blob/master/outfitting.csv).
+
+  A future update might remove those maps, or at least fully deprecate their
+  use by plugins.  Please contact us **now** if you actually make use of this
+  data.
+
+---
+
+Release 5.6.1
+===
+This release addresses some minor bugs and annoyances with v5.6.0, especially
+for Legacy galaxy players.
+
+In general, at this early stage of the galaxy split, we prefer to continue to
+warn Legacy users who have 'send data' options active for sites that only
+accept Live data.  In the future this might be reviewed and such warnings
+removed such that the functionality *fails silently*.  This might be of use
+to users who actively play in both galaxies.
+
+* CAPI queries will now **only be attempted for Live galaxy players**  This is
+  a stop-gap whilst the functionality is implemented for Legacy galaxy players.
+  Doing so prevents using Live galaxy data whilst playing Legacy galaxy, which
+  would be increasingly wrong and misleading.
+  1. 'Automatic update on docking' will do nothing for Legacy players.
+  2. Pressing the 'Update' button whilst playing Legacy will result in a status
+    line message "CAPI for Legacy not yet supported", and otherwise achieve
+    nothing.  **The only function of this button is to query CAPI data and
+    pass it to plugins, which does *not* include Inara and EDSM**.
+  3. A Legacy player trying to use "File" > "Status" will get the message
+    "Status: No CAPI data yet" due to depending on CAPI data.
+  
+  It is hoped to implement CAPI data retrieval and use for Legacy players soon,
+  although this will likely entail extending the plugins API to include a new
+  function specifically for this.  Thus only updated plugins would support
+  this.
+* EDDN: Where data has been sourced from the CAPI this application now sends
+  a header->gameversion in the format `"CAPI-(Live|Legacy)-<endpoint"` as per
+  [the updated documentation](https://github.com/EDCD/EDDN/blob/live/docs/Developers.md#gameversions-and-gamebuild).
+  1. As *this* version only queries CAPI for Live players that will only be
+  `"CAPI-Live-<endpoint>"` for the time being.
+
+  2. If, somehow, the CAPI host queried matches neither the
+  current Live host, the Legacy host, nor the past beta host, you will see
+  `"CAPI-UNKNOWN-<endpoint>"`.
+
+  3. As that statement implies, this application will also signal 'Live' if
+  `pts-companion.orerve.net` has been used, due to detecting an alpha or beta
+  version of the game.  However, in that case the `/test` schemas will be used.
+  
+  Closes [#1734](https://github.com/EDCD/EDMarketConnector/issues/1734).
+* Inara: Only warn about Legacy data if sending is enabled in Settings > Inara.
+
+  Closes [#1730](https://github.com/EDCD/EDMarketConnector/issues/1730).
+* Inara: Handling of some events has had a sanity check added so that the
+  Inara API doesn't complain about empty strings being sent.  In these cases
+  the event will simply not be sent.
+
+  Closes [#1732](https://github.com/EDCD/EDMarketConnector/issues/1732).
+
+* EDSM: EDSM has decided to accept only Live data on its API.  Thus, this
+  application will only attempt to send data for Live galaxy players.
+
+  If a Legacy galaxy player has the Settings > EDSM > "Send flight log and
+  Cmdr status to EDSM" option active then they will receive an error about
+  this at most once every 5 minutes.  Disabling that option will prevent the
+  warning.
+
+Plugin Developers
+---
+* PLUGINS.md has been updated to make it clear that the only use of imports
+  from the `config` module are for setting/getting/removing a plugin's own
+  configuration, or detecting application shutdown in progress.
+* PLUGINS.md has also been updated to add a note about how the `data` passed
+  to a plugin `cmdr_data()` is, strictly speaking, an instance of `CAPIData`,
+  which is an extension of `UserDict`.  It has some extra properties on it,
+  **but these are for internal use only and no plugin should rely on them**.
+* As noted above, implementing CAPI data for Legacy players will likely entail
+  an additional function in the API provided to plugins.  See
+  [#1728](https://github.com/EDCD/EDMarketConnector/issues/1728) for discussion
+  about this.
+
+---
+
 Release 5.6.0
 ===
-
-Tha major reason for this release is to address the Live versus Legacy galaxy
+The major reason for this release is to address the Live versus Legacy galaxy
 split [coming in Update 14 of the game](https://www.elitedangerous.com/news/elite-dangerous-update-14-and-beyond-live-and-legacy-modes).
 See the section "Update 14 and the Galaxy Split" below for how this might
 impact you.
