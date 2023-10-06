@@ -33,6 +33,70 @@ produce the Windows executables and installer.
   currently used version in a given branch.
 
 ---
+Release 5.9.4
+===
+This release fixes a widely-reported bug that resulted in the cAPI Authentication
+flow being disrupted for a subset of users. Thank you to all the CMDRs who reported this to
+us and provided logs to us so that we could get the issue isolated.
+
+- Fixes a missing registry issue that could cause the EDMC:// protocol to fail.
+(#2061, #2059, #2058, #2057)
+- Renames the default start menu shortcut to be more clear. (#2062)
+
+Known Issues
+--
+- The popup on the EDMC Authentication Box is not translated yet. Ich spreche kein Deutsch.
+- The cAPI is giving an Error: 500 on the /shipyard endpoint on carriers. We think this is an FDEV issue.
+
+Release 5.9.3
+===
+This release is identical to 5.9.3, except reverts a bad change. 
+
+- REVERTS Deprecated load_module() is now retired (#1462)
+
+Release 5.9.2
+===
+This release fixes a critical issue on clean installs which would not update the
+Windows registry to allow for protocol handling. All users are **strongly** encouraged to update.
+
+- Fixes a critical bug with the installer on new installs not creating registry keys (#2046)
+- Re-enables automatic submodule updates (#1443)
+- Help -> About Version String can now be copied to clipboard (#1936)
+- EDSM Task Manager Printout now is less useless (#2045)
+- Deprecated load_module() is now retired (#1462)
+- API Keys are masked in Settings (#2047)
+- Installer will now refuse to install on Win7 and Earlier (#1122)
+
+
+Release 5.9.1
+===
+This release updates the build system in use for EDMC to a more feature-rich installer, as well 
+as updating the commodity information to be up-to-date for Update 16.
+
+NOTE: This version hands over the installer to an EXE file for Windows instead of an MSI.
+This does not change any functionality or plugin capability of EDMC. You **_may_** need to 
+manually close EDMC during the update process if updating from version 5.9.0 or earlier.
+
+* Removed the old WiX Build System
+* Handed over the Build system to Inno Setup
+* Broke apart the Build and Installer scripts for ease of development
+* Updated FDevIDs to latest version
+* Updated coriolis-data to latest version
+* Updated some internal documentation.
+
+Release 5.9.0
+===
+This release is essentially the same as 5.9.0-rc1 with only a typo, the version and
+this changelog updated.
+
+This release contains the removal of the EDDB module, as well as a few under-the-hood
+updates.
+
+* Removes the EDDB plugin due to EDDB shutting down.
+* Unsets EDDB as the default handler for certain URL preferences.
+* Updates the FDevIDs to latest versions.
+* Removes EDDB references from help string documentations.
+* Updated a number of dependencies to their latest working versions
 
 Release 5.8.1
 ===

@@ -62,7 +62,6 @@ class Plugin(object):
                     filename,
                     loadfile
                 ).load_module()
-
                 if getattr(module, 'plugin_start3', None):
                     newname = module.plugin_start3(os.path.dirname(loadfile))
                     self.name = newname and str(newname) or name
