@@ -61,12 +61,6 @@
 /* EDMarketConnector.py: 'Edit' menu title on OSX; EDMarketConnector.py: 'Edit' menu title; In files: EDMarketConnector.py:922; EDMarketConnector.py:940; EDMarketConnector.py:943; */
 "Edit" = "Upravit";
 
-/* EDMarketConnector.py: 'View' menu title on OSX; In files: EDMarketConnector.py:923; */
-"View" = "Zobrazit";
-
-/* EDMarketConnector.py: 'Window' menu title on OSX; In files: EDMarketConnector.py:924; */
-"Window" = "Okno";
-
 /* EDMarketConnector.py: Help' menu title on OSX; EDMarketConnector.py: 'Help' menu title; In files: EDMarketConnector.py:925; EDMarketConnector.py:941; EDMarketConnector.py:944; */
 "Help" = "Nápověda";
 
@@ -178,13 +172,13 @@
 /* l10n.py: The system default language choice in Settings > Appearance; prefs.py: Settings > Configuration - Label on 'reset journal files location to default' button; prefs.py: The system default language choice in Settings > Appearance; prefs.py: Label for 'Default' theme radio button; In files: l10n.py:193; prefs.py:455; prefs.py:709; prefs.py:742; */
 "Default" = "Výchozí";
 
-/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:74; coriolis.py:77; coriolis.py:123; coriolis.py:139; coriolis.py:145; */
+/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:48; coriolis.py:74; coriolis.py:77; coriolis.py:94; coriolis.py:123; coriolis.py:139; coriolis.py:145; coriolis.py:179; coriolis.py:182; */
 "Auto" = "Auto";
 
-/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:75; coriolis.py:121; coriolis.py:137; */
+/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:49; coriolis.py:75; coriolis.py:95; coriolis.py:121; coriolis.py:137; coriolis.py:180; */
 "Normal" = "Normal";
 
-/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:76; coriolis.py:122; coriolis.py:138; */
+/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:50; coriolis.py:76; coriolis.py:96; coriolis.py:122; coriolis.py:138; coriolis.py:181; */
 "Beta" = "Beta";
 
 /* coriolis.py: Settings>Coriolis: Help/hint for changing coriolis URLs; In files: coriolis.py:91:93; */
@@ -223,9 +217,6 @@
 /* eddn.py: Status text shown while attempting to send data; In files: eddn.py:2507; */
 "Sending data to EDDN..." = "Odesílání dat do EDDN...";
 
-/* edsm.py: Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:308; */
-"Send flight log and Cmdr status to EDSM" = "Odesílat letový log a status CMDRa do EDSM";
-
 /* edsm.py: Settings>EDSM - Label on header/URL to EDSM API key page; In files: edsm.py:319; */
 "Elite Dangerous Star Map credentials" = "Přihlašovací údaje Elite Dangerous Star Map";
 
@@ -259,9 +250,6 @@
 /* inara.py: INARA API returned some kind of error (error message will be contained in {MSG}); In files: inara.py:1650; inara.py:1663; */
 "Error: Inara {MSG}" = "Chyba: Inara {MSG}";
 
-/* prefs.py: File > Preferences menu entry for macOS; In files: prefs.py:237; */
-"Preferences" = "Nastavení";
-
 /* prefs.py: Settings > Output - choosing what data to save to files; In files: prefs.py:335; */
 "Please choose what data to save" = "Vyberte, která data chcete ukládat";
 
@@ -280,9 +268,6 @@
 /* prefs.py: Settings > Output - Label for "where files are located"; In files: prefs.py:379; prefs.py:398; */
 "File location" = "Cesta k souboru";
 
-/* prefs.py: macOS Preferences - files location selection button; In files: prefs.py:387; prefs.py:437; */
-"Change..." = "Změnit...";
-
 /* prefs.py: NOT-macOS Settings - files location selection button; prefs.py: NOT-macOS Setting - files location selection button; In files: prefs.py:390; prefs.py:440; */
 "Browse..." = "Procházet...";
 
@@ -292,20 +277,8 @@
 /* prefs.py: Settings > Configuration - Label for Journal files location; In files: prefs.py:431; prefs.py:446; */
 "E:D journal file location" = "E:D umístění souboru deníku";
 
-/* prefs.py: Hotkey/Shortcut settings prompt on OSX; In files: prefs.py:490; */
-"Keyboard shortcut" = "Klávesová zkratka";
-
 /* prefs.py: Hotkey/Shortcut settings prompt on Windows; In files: prefs.py:492; */
 "Hotkey" = "Klávesová zkratka";
-
-/* prefs.py: macOS Preferences > Configuration - restart the app message; In files: prefs.py:501; */
-"Re-start {APP} to use shortcuts" = "Restartujte {APP} pro aktivaci klávesových zkratek";
-
-/* prefs.py: macOS - Configuration - need to grant the app permission for keyboard shortcuts; In files: prefs.py:510; */
-"{APP} needs permission to use shortcuts" = "{APP} vyžaduje oprávnění pro použití klávesových zkratek";
-
-/* prefs.py: Shortcut settings button on OSX; In files: prefs.py:515; */
-"Open System Preferences" = "Otevřít Předvolby systému";
 
 /* prefs.py: Configuration - Act on hotkey only when ED is in foreground; In files: prefs.py:538; */
 "Only when Elite: Dangerous is the active app" = "Pouze pokud je Elite: Dangerous aktivní";
@@ -373,9 +346,6 @@
 /* prefs.py: Label for location of third-party plugins folder; In files: prefs.py:908; */
 "Plugins folder" = "Složka pluginů";
 
-/* prefs.py: Label on button used to open a filesystem folder; In files: prefs.py:915; */
-"Open" = "Otevřít";
-
 /* prefs.py: Tip/label about how to disable plugins; In files: prefs.py:923; */
 "Tip: You can disable a plugin by{CR}adding '{EXT}' to its folder name" = "Tip: Plugin můžete vypnout přidáním{CR}'{EXT}' do názvu jeho složky";
 
@@ -383,7 +353,7 @@
 "Enabled Plugins" = "Zapnuté pluginy";
 
 /* prefs.py: Plugins - Label for list of 'enabled' plugins that don't work with Python 3.x; In files: prefs.py:954; */
-"Plugins Without Python 3.x Support:" = "Pluginy bez podpory Python 3.x:";
+"Plugins Without Python 3.x Support" = "Pluginy, které nepodporují Python 3.x";
 
 /* prefs.py: Plugins - Label on URL to documentation about migrating plugins from Python 2.7; In files: prefs.py:962; */
 "Information on migrating plugins" = "Informace jak migrovat pluginy.";
@@ -618,3 +588,4 @@
 
 /* stats.py: Status dialog title; In files: stats.py:418; */
 "Ships" = "Lodě";
+

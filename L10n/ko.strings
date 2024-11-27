@@ -70,12 +70,6 @@
 /* EDMarketConnector.py: 'Edit' menu title on OSX; EDMarketConnector.py: 'Edit' menu title; In files: EDMarketConnector.py:922; EDMarketConnector.py:940; EDMarketConnector.py:943; */
 "Edit" = "편집";
 
-/* EDMarketConnector.py: 'View' menu title on OSX; In files: EDMarketConnector.py:923; */
-"View" = "보기";
-
-/* EDMarketConnector.py: 'Window' menu title on OSX; In files: EDMarketConnector.py:924; */
-"Window" = "창";
-
 /* EDMarketConnector.py: Help' menu title on OSX; EDMarketConnector.py: 'Help' menu title; In files: EDMarketConnector.py:925; EDMarketConnector.py:941; EDMarketConnector.py:944; */
 "Help" = "도움말";
 
@@ -202,13 +196,13 @@
 /* l10n.py: The system default language choice in Settings > Appearance; prefs.py: Settings > Configuration - Label on 'reset journal files location to default' button; prefs.py: The system default language choice in Settings > Appearance; prefs.py: Label for 'Default' theme radio button; In files: l10n.py:193; prefs.py:455; prefs.py:709; prefs.py:742; */
 "Default" = "기본값";
 
-/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:74; coriolis.py:77; coriolis.py:123; coriolis.py:139; coriolis.py:145; */
+/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:48; coriolis.py:74; coriolis.py:77; coriolis.py:94; coriolis.py:123; coriolis.py:139; coriolis.py:145; coriolis.py:179; coriolis.py:182; */
 "Auto" = "자동";
 
-/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:75; coriolis.py:121; coriolis.py:137; */
+/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:49; coriolis.py:75; coriolis.py:95; coriolis.py:121; coriolis.py:137; coriolis.py:180; */
 "Normal" = "일반";
 
-/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:76; coriolis.py:122; coriolis.py:138; */
+/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:50; coriolis.py:76; coriolis.py:96; coriolis.py:122; coriolis.py:138; coriolis.py:181; */
 "Beta" = "베타";
 
 /* coriolis.py: Settings>Coriolis: Help/hint for changing coriolis URLs; In files: coriolis.py:91:93; */
@@ -256,9 +250,6 @@
 /* eddn.py: Status text shown while attempting to send data; In files: eddn.py:2507; */
 "Sending data to EDDN..." = "EDDN에 정보 전송하는 중...";
 
-/* edsm.py: Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:308; */
-"Send flight log and Cmdr status to EDSM" = "EDSM에 flight 로그와  커맨더 상태 정보 전송하기";
-
 /* edsm.py: Settings>EDSM - Label on header/URL to EDSM API key page; In files: edsm.py:319; */
 "Elite Dangerous Star Map credentials" = "Elite Dangerous Star Map 계정";
 
@@ -292,9 +283,6 @@
 /* inara.py: INARA API returned some kind of error (error message will be contained in {MSG}); In files: inara.py:1650; inara.py:1663; */
 "Error: Inara {MSG}" = "오류: Inara {MSG}";
 
-/* prefs.py: File > Preferences menu entry for macOS; In files: prefs.py:237; */
-"Preferences" = "설정";
-
 /* prefs.py: Settings > Output - choosing what data to save to files; In files: prefs.py:335; */
 "Please choose what data to save" = "어느 데이터를 저장할 지 선택해주세요";
 
@@ -313,9 +301,6 @@
 /* prefs.py: Settings > Output - Label for "where files are located"; In files: prefs.py:379; prefs.py:398; */
 "File location" = "파일 위치";
 
-/* prefs.py: macOS Preferences - files location selection button; In files: prefs.py:387; prefs.py:437; */
-"Change..." = "바꾸기...";
-
 /* prefs.py: NOT-macOS Settings - files location selection button; prefs.py: NOT-macOS Setting - files location selection button; In files: prefs.py:390; prefs.py:440; */
 "Browse..." = "찾아보기...";
 
@@ -325,20 +310,8 @@
 /* prefs.py: Settings > Configuration - Label for Journal files location; In files: prefs.py:431; prefs.py:446; */
 "E:D journal file location" = "E:D 저널(journal) 파일 위치";
 
-/* prefs.py: Hotkey/Shortcut settings prompt on OSX; In files: prefs.py:490; */
-"Keyboard shortcut" = "단축키 설정";
-
 /* prefs.py: Hotkey/Shortcut settings prompt on Windows; In files: prefs.py:492; */
 "Hotkey" = "단축키";
-
-/* prefs.py: macOS Preferences > Configuration - restart the app message; In files: prefs.py:501; */
-"Re-start {APP} to use shortcuts" = "단축키를 사용하려면 {APP}을(를) 다시 시작하십시오";
-
-/* prefs.py: macOS - Configuration - need to grant the app permission for keyboard shortcuts; In files: prefs.py:510; */
-"{APP} needs permission to use shortcuts" = "단축기 사용을 위해선 {APP}이 권한 허용을 필요로 합니다";
-
-/* prefs.py: Shortcut settings button on OSX; In files: prefs.py:515; */
-"Open System Preferences" = "시스템 설정 열기";
 
 /* prefs.py: Configuration - Act on hotkey only when ED is in foreground; In files: prefs.py:538; */
 "Only when Elite: Dangerous is the active app" = "Elite: Dangerous가 활성 창 상태일때만";
@@ -415,9 +388,6 @@
 /* prefs.py: Label for location of third-party plugins folder; In files: prefs.py:908; */
 "Plugins folder" = "플러그인 폴더";
 
-/* prefs.py: Label on button used to open a filesystem folder; In files: prefs.py:915; */
-"Open" = "열기";
-
 /* prefs.py: Tip/label about how to disable plugins; In files: prefs.py:923; */
 "Tip: You can disable a plugin by{CR}adding '{EXT}' to its folder name" = "팁: 플러그인을 비활성화하려면{CR} '{EXT}'를 폴더명 뒤에 추가하면 됨";
 
@@ -425,7 +395,7 @@
 "Enabled Plugins" = "활성 플러그인";
 
 /* prefs.py: Plugins - Label for list of 'enabled' plugins that don't work with Python 3.x; In files: prefs.py:954; */
-"Plugins Without Python 3.x Support:" = "Python 3.x을 지원하지 않는 플러그인:";
+"Plugins Without Python 3.x Support" = "Python 3.x을 지원하지 않는 플러그인";
 
 /* prefs.py: Plugins - Label on URL to documentation about migrating plugins from Python 2.7; In files: prefs.py:962; */
 "Information on migrating plugins" = "플러그인 위치 변경에 대한 정보";
@@ -666,3 +636,4 @@
 
 /* stats.py: Status dialog title; In files: stats.py:418; */
 "Ships" = "함선(들)";
+

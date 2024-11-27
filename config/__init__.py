@@ -1,11 +1,14 @@
 """
-Code dealing with the configuration of the program.
+__init__.py - Code dealing with the configuration of the program.
+
+Copyright (c) EDCD, All Rights Reserved
+Licensed under the GNU General Public License.
+See LICENSE file.
 
 Windows uses the Registry to store values in a flat manner.
 Linux uses a file, but for commonality it's still a flat data structure.
-macOS uses a 'defaults' object.
 """
-
+from __future__ import annotations
 
 __all__ = [
     # defined in the order they appear in the file
@@ -14,7 +17,6 @@ __all__ = [
     'applongname',
     'appcmdname',
     'copyright',
-    'update_feed',
     'update_interval',
     'debug_senders',
     'trace_on',
@@ -27,7 +29,8 @@ __all__ = [
     'user_agent',
     'appversion_nobuild',
     'AbstractConfig',
-    'config'
+    'config',
+    'get_update_feed',
 ]
 
 import abc
@@ -38,13 +41,10 @@ import pathlib
 import re
 import subprocess
 import sys
-import traceback
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Optional, Type, TypeVar
-
+from typing import Any, Callable, Type, TypeVar
 import semantic_version
-
 from constants import GITVERSION_FILE, applongname, appname
 
 # Any of these may be imported by plugins
@@ -53,13 +53,12 @@ appcmdname = 'EDMC'
 # <https://semver.org/#semantic-versioning-specification-semver>
 # Major.Minor.Patch(-prerelease)(+buildmetadata)
 # NB: Do *not* import this, use the functions appversion() and appversion_nobuild()
-_static_appversion = '5.9.5'
+_static_appversion = '5.12.1'
+_cached_version: semantic_version.Version | None = None
+copyright = '© 2015-2019 Jonathan Harris, 2020-2024 EDCD'
 
-_cached_version: Optional[semantic_version.Version] = None
-copyright = '© 2015-2019 Jonathan Harris, 2020-2023 EDCD'
 
-update_feed = 'https://raw.githubusercontent.com/EDCD/EDMarketConnector/releases/edmarketconnector.xml'
-update_interval = 8*60*60
+update_interval = 8*60*60  # 8 Hours
 # Providers marked to be in debug mode. Generally this is expected to switch to sending data to a log file
 debug_senders: list[str] = []
 # TRACE logging code that should actually be used.  Means not spamming it
@@ -68,7 +67,7 @@ trace_on: list[str] = []
 
 no_capi: bool = False
 capi_pretend_down: bool = False
-capi_debug_access_token: Optional[str] = None
+capi_debug_access_token: str | None = None
 # This must be done here in order to avoid an import cycle with EDMCLogging.
 # Other code should use EDMCLogging.get_main_logger
 if os.getenv("EDMC_NO_UI"):
@@ -81,32 +80,32 @@ else:
 _T = TypeVar('_T')
 
 
-###########################################################################
-def git_shorthash_from_head() -> str:
+def git_shorthash_from_head() -> str | None:
     """
     Determine short hash for current git HEAD.
 
     Includes `.DIRTY` if any changes have been made from HEAD
 
-    :return: str - None if we couldn't determine the short hash.
+    :return: str | None: None if we couldn't determine the short hash.
     """
-    shorthash: str = None  # type: ignore
+    shorthash: str | None = None
 
     try:
-        git_cmd = subprocess.Popen('git rev-parse --short HEAD'.split(),
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT
-                                   )
+        git_cmd = subprocess.Popen(
+            "git rev-parse --short HEAD".split(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
         out, err = git_cmd.communicate()
 
-    except Exception as e:
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
         logger.info(f"Couldn't run git command for short hash: {e!r}")
 
     else:
         shorthash = out.decode().rstrip('\n')
         if re.match(r'^[0-9a-f]{7,}$', shorthash) is None:
             logger.error(f"'{shorthash}' doesn't look like a valid git short hash, forcing to None")
-            shorthash = None  # type: ignore
+            shorthash = None
 
     if shorthash is not None:
         with contextlib.suppress(Exception):
@@ -133,14 +132,20 @@ def appversion() -> semantic_version.Version:
     if getattr(sys, 'frozen', False):
         # Running frozen, so we should have a .gitversion file
         # Yes, .parent because if frozen we're inside library.zip
-        with open(pathlib.Path(sys.path[0]).parent / GITVERSION_FILE, 'r', encoding='utf-8') as gitv:
-            shorthash = gitv.read()
+        with open(pathlib.Path(sys.path[0]).parent / GITVERSION_FILE, encoding='utf-8') as gitv:
+            shorthash: str | None = gitv.read()
 
     else:
-        # Running from source
+        # Running from source. Use git rev-parse --short HEAD
+        # or fall back to .gitversion file if it exists.
+        # This is also required for the Flatpak
         shorthash = git_shorthash_from_head()
         if shorthash is None:
-            shorthash = 'UNKNOWN'
+            if pathlib.Path(sys.path[0] + "/" + GITVERSION_FILE).exists():
+                with open(pathlib.Path(sys.path[0] + "/" + GITVERSION_FILE), encoding='utf-8') as gitv:
+                    shorthash = gitv.read()
+            else:
+                shorthash = 'UNKNOWN'
 
     _cached_version = semantic_version.Version(f'{_static_appversion}+{shorthash}')
     return _cached_version
@@ -159,11 +164,14 @@ def appversion_nobuild() -> semantic_version.Version:
     :return: App version without any build meta data.
     """
     return appversion().truncate('prerelease')
-###########################################################################
 
 
 class AbstractConfig(abc.ABC):
-    """Abstract root class of all platform specific Config implementations."""
+    """
+    Abstract root class of all platform specific Config implementations.
+
+    Commented lines are no longer supported or replaced.
+    """
 
     OUT_EDDN_SEND_STATION_DATA = 1
     # OUT_MKT_BPC = 2	# No longer supported
@@ -183,11 +191,11 @@ class AbstractConfig(abc.ABC):
 
     app_dir_path: pathlib.Path
     plugin_dir_path: pathlib.Path
+    default_plugin_dir_path: pathlib.Path
     internal_plugin_dir_path: pathlib.Path
     respath_path: pathlib.Path
     home_path: pathlib.Path
     default_journal_dir_path: pathlib.Path
-
     identifier: str
 
     __in_shutdown = False  # Is the application currently shutting down ?
@@ -243,7 +251,7 @@ class AbstractConfig(abc.ABC):
         self.__eddn_url = eddn_url
 
     @property
-    def eddn_url(self) -> Optional[str]:
+    def eddn_url(self) -> str | None:
         """
         Provide the custom EDDN URL.
 
@@ -275,6 +283,11 @@ class AbstractConfig(abc.ABC):
         return str(self.plugin_dir_path)
 
     @property
+    def default_plugin_dir(self) -> str:
+        """Return a string version of plugin_dir."""
+        return str(self.default_plugin_dir_path)
+
+    @property
     def internal_plugin_dir(self) -> str:
         """Return a string version of internal_plugin_dir."""
         return str(self.internal_plugin_dir_path)
@@ -298,14 +311,14 @@ class AbstractConfig(abc.ABC):
     def _suppress_call(
         func: Callable[..., _T], exceptions: Type[BaseException] | list[Type[BaseException]] = Exception,
         *args: Any, **kwargs: Any
-    ) -> Optional[_T]:
+    ) -> _T | None:
         if exceptions is None:
             exceptions = [Exception]
 
         if not isinstance(exceptions, list):
             exceptions = [exceptions]
 
-        with contextlib.suppress(*exceptions):  # type: ignore # it works fine, mypy
+        with contextlib.suppress(*exceptions):
             return func(*args, **kwargs)
 
         return None
@@ -322,22 +335,22 @@ class AbstractConfig(abc.ABC):
         :raises OSError: On Windows, if a Registry error occurs.
         :return: The data or the default.
         """
-        warnings.warn(DeprecationWarning('get is Deprecated. use the specific getter for your type'))
-        logger.debug('Attempt to use Deprecated get() method\n' + ''.join(traceback.format_stack()))
+        # DEPRECATED: Migrate to specific type getters. Will remove in 6.0 or later.
+        warnings.warn('get is Deprecated. use the specific getter for your type', DeprecationWarning, stacklevel=2)
 
         if (a_list := self._suppress_call(self.get_list, ValueError, key, default=None)) is not None:
             return a_list
 
-        elif (a_str := self._suppress_call(self.get_str, ValueError, key, default=None)) is not None:
+        if (a_str := self._suppress_call(self.get_str, ValueError, key, default=None)) is not None:
             return a_str
 
-        elif (a_bool := self._suppress_call(self.get_bool, ValueError, key, default=None)) is not None:
+        if (a_bool := self._suppress_call(self.get_bool, ValueError, key, default=None)) is not None:
             return a_bool
 
-        elif (an_int := self._suppress_call(self.get_int, ValueError, key, default=None)) is not None:
+        if (an_int := self._suppress_call(self.get_int, ValueError, key, default=None)) is not None:
             return an_int
 
-        return default  # type: ignore
+        return default
 
     @abstractmethod
     def get_list(self, key: str, *, default: list | None = None) -> list:
@@ -381,8 +394,8 @@ class AbstractConfig(abc.ABC):
         See get_int for its replacement.
         :raises OSError: On Windows, if a Registry error occurs.
         """
-        warnings.warn(DeprecationWarning('getint is Deprecated. Use get_int instead'))
-        logger.debug('Attempt to use Deprecated getint() method\n' + ''.join(traceback.format_stack()))
+        # DEPRECATED: Migrate to get_int. Will remove in 6.0 or later.
+        warnings.warn('getint is Deprecated. Use get_int instead', DeprecationWarning, stacklevel=2)
 
         return self.get_int(key, default=default)
 
@@ -439,17 +452,19 @@ class AbstractConfig(abc.ABC):
         """Close this config and release any associated resources."""
         raise NotImplementedError
 
+# DEPRECATED: Password system doesn't do anything. Will remove in 6.0 or later.
     def get_password(self, account: str) -> None:
         """Legacy password retrieval."""
-        warnings.warn("password subsystem is no longer supported", DeprecationWarning)
+        warnings.warn("password subsystem is no longer supported", DeprecationWarning, stacklevel=2)
 
     def set_password(self, account: str, password: str) -> None:
         """Legacy password setting."""
-        warnings.warn("password subsystem is no longer supported", DeprecationWarning)
+        warnings.warn("password subsystem is no longer supported", DeprecationWarning, stacklevel=2)
 
     def delete_password(self, account: str) -> None:
         """Legacy password deletion."""
-        warnings.warn("password subsystem is no longer supported", DeprecationWarning)
+        warnings.warn("password subsystem is no longer supported", DeprecationWarning, stacklevel=2)
+# End Dep Zone
 
 
 def get_config(*args, **kwargs) -> AbstractConfig:
@@ -460,20 +475,32 @@ def get_config(*args, **kwargs) -> AbstractConfig:
     :param kwargs: Args to be passed through to implementation.
     :return: Instance of the implementation.
     """
-    if sys.platform == "darwin":  # pragma: sys-platform-darwin
-        from .darwin import MacConfig
-        return MacConfig(*args, **kwargs)
-
-    elif sys.platform == "win32":  # pragma: sys-platform-win32
+    if sys.platform == "win32":  # pragma: sys-platform-win32
         from .windows import WinConfig
         return WinConfig(*args, **kwargs)
 
-    elif sys.platform == "linux":  # pragma: sys-platform-linux
+    if sys.platform == "linux":  # pragma: sys-platform-linux
         from .linux import LinuxConfig
         return LinuxConfig(*args, **kwargs)
 
-    else:  # pragma: sys-platform-not-known
-        raise ValueError(f'Unknown platform: {sys.platform=}')
+    raise ValueError(f'Unknown platform: {sys.platform=}')
 
 
 config = get_config()
+
+
+# Wiki: https://github.com/EDCD/EDMarketConnector/wiki/Participating-in-Open-Betas-of-EDMC
+def get_update_feed() -> str:
+    """Select the proper update feed for the current update track."""
+    if config.get_bool('beta_optin'):
+        return 'https://raw.githubusercontent.com/EDCD/EDMarketConnector/releases/edmarketconnector-beta.xml'
+    return 'https://raw.githubusercontent.com/EDCD/EDMarketConnector/releases/edmarketconnector.xml'
+
+
+# DEPRECATED: Migrate to get_update_feed(). Will remove in 6.0 or later.
+def __getattr__(name: str):
+    if name == 'update_feed':
+        warnings.warn('update_feed is deprecated, and will be removed in 6.0 or later. '
+                      'Please migrate to get_update_feed()', DeprecationWarning, stacklevel=2)
+        return get_update_feed()
+    raise AttributeError(name=name)

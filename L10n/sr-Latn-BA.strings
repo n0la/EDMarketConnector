@@ -1,3 +1,11 @@
+/* edsm.py:Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:316; */
+"Send flight log and CMDR status to EDSM" = "Pošalji log leta i CMDR status na EDSM";
+
+/* prefs.py:Label on button used to open a filesystem folder; In files: prefs.py:706; */
+"Open Log Folder" = "Otvori folder sa logovima";
+
+/* inara.py:Text Inara Show API key; In files: inara.py:305; */
+"Show API Key" = "Prikaži API ključ";
 /* Language name */
 "!Language" = "Srpski (Latinica, Bosna i Hercegovina)";
 
@@ -14,7 +22,7 @@
 "Error: Invalid Credentials" = "Greška: Neispravni kredencijali";
 
 /* companion.py: Frontier CAPI authorisation not for currently game-active commander; In files: companion.py:296; */
-"Error: Wrong Cmdr" = "Greška: Pogrešan Cmdr";
+"Error: Wrong Cmdr" = "Greška: Pogrešan CMDR";
 
 /* companion.py: Generic error prefix - following text is from Frontier auth service; In files: companion.py:432; companion.py:517; */
 "Error" = "Greška";
@@ -27,6 +35,12 @@
 
 /* companion.py: Failed to get Access Token from Frontier Auth service; In files: companion.py:508; */
 "Error: unable to get token" = "Greška: Nemoguće dobaviti token";
+
+/* EDMarketConnector.py: EDMC Critical Error Notification; */
+"EDMC encountered a critical error, and cannot recover. EDMC is shutting down for its own protection!" = "EDMC je naišao na kritičnu grešku i ne može da se oporavi. EDMC će biti ugašen zbog vlastite zaštite.";
+
+/* EDMarketConnector.py: EDMC Critical Error Details; */
+"Here's what EDMC Detected:\r\n\r\n{ERR}\r\n\r\nDo you want to file a Bug Report on GitHub?" = "EDMC je detektovao sljedeće:\n\n{ERR}\n\nDa li želite da izvršite Bug Report na GitHub-u?";
 
 /* companion.py: Frontier CAPI returned 418, meaning down for maintenance; In files: companion.py:844; */
 "Frontier CAPI down for maintenance" = "Frontier CAPI nedostupan zbog održavanja";
@@ -47,7 +61,7 @@
 "Error: Check E:D journal file location" = "Greška: Provjerite lokaciju E:D journal fajla";
 
 /* EDMarketConnector.py: Label for commander name in main window; edsm.py: Game Commander name label in EDSM settings; stats.py: Cmdr stats; theme.py: Label for commander name in main window; In files: EDMarketConnector.py:913; edsm.py:332; stats.py:57; theme.py:290; */
-"Cmdr" = "Cmdr";
+"Cmdr" = "CMDR";
 
 /* EDMarketConnector.py: 'Ship' or multi-crew role label in main window, as applicable; EDMarketConnector.py: Multicrew role label in main window; In files: EDMarketConnector.py:915; EDMarketConnector.py:1487; */
 "Role" = "Uloga";
@@ -70,12 +84,6 @@
 /* EDMarketConnector.py: 'Edit' menu title on OSX; EDMarketConnector.py: 'Edit' menu title; In files: EDMarketConnector.py:922; EDMarketConnector.py:940; EDMarketConnector.py:943; */
 "Edit" = "Uredi";
 
-/* EDMarketConnector.py: 'View' menu title on OSX; In files: EDMarketConnector.py:923; */
-"View" = "Pogled";
-
-/* EDMarketConnector.py: 'Window' menu title on OSX; In files: EDMarketConnector.py:924; */
-"Window" = "Prozor";
-
 /* EDMarketConnector.py: Help' menu title on OSX; EDMarketConnector.py: 'Help' menu title; In files: EDMarketConnector.py:925; EDMarketConnector.py:941; EDMarketConnector.py:944; */
 "Help" = "Pomoć";
 
@@ -85,6 +93,9 @@
 /* EDMarketConnector.py: Help > Check for Updates...; In files: EDMarketConnector.py:930; EDMarketConnector.py:958; */
 "Check for Updates..." = "Provjeri nadogradnje...";
 
+/* EDMarketConnector.py: Help > Open System Profiler; In files: EDMarketConnector.py:888; */
+"Open System Profiler" = "Otvori System Profiler";
+
 /* EDMarketConnector.py: File > Save Raw Data...; In files: EDMarketConnector.py:931; EDMarketConnector.py:948; */
 "Save Raw Data..." = "Snimi sirove podatke...";
 
@@ -93,6 +104,12 @@
 
 /* EDMarketConnector.py: Help > Documentation; In files: EDMarketConnector.py:933; EDMarketConnector.py:953; */
 "Documentation" = "Dokumentacija";
+
+/* EDMarketConnector.py: Help > Troubleshooting; In files: EDMarketConnector.py:934; EDMarketConnector.py:954; */
+"Troubleshooting" = "Otklanjanje problema";
+
+/* EDMarketConnector.py: Help > Report A Bug; In files: EDMarketConnector.py:935; EDMarketConnector.py:955; */
+"Report A Bug" = "Prijavi Bug";
 
 /* EDMarketConnector.py: Help > Privacy Policy; In files: EDMarketConnector.py:936; EDMarketConnector.py:956; */
 "Privacy Policy" = "Politika privatnosti";
@@ -108,6 +125,18 @@
 
 /* EDMarketConnector.py: Label for 'Copy' as in 'Copy and Paste'; ttkHyperlinkLabel.py: Label for 'Copy' as in 'Copy and Paste'; In files: EDMarketConnector.py:962; ttkHyperlinkLabel.py:53; */
 "Copy" = "Kopiraj";
+
+/* myNotebook.py: Label for 'Cut' as in 'Cut and Paste'; */
+"Cut" = "Izreži";
+
+/* myNotebook.py: Label for 'Paste' as in 'Copy and Paste'; */
+"Paste" = "Nalijepi";
+
+/* myNotebook.py: Label for 'Select All'; */
+"Select All" = "Selektuj sve";
+
+/* EDMarketConnector.py: CAPI auth aborted because of killswitch; EDMarketConnector.py: CAPI auth query aborted because of killswitch; In files: EDMarketConnector.py:973; EDMarketConnector.py:1067; */
+"CAPI auth disabled by killswitch" = "CAPI autentifikacija onemogućena putem sistemskog prekidača";
 
 /* EDMarketConnector.py: Status - Attempting to get a Frontier Auth Access Token; In files: EDMarketConnector.py:978; */
 "Logging in..." = "Prijavljivanje...";
@@ -130,6 +159,9 @@
 /* EDMarketConnector.py: CAPI queries aborted because game mode unknown; In files: EDMarketConnector.py:1083; */
 "CAPI query aborted: Game mode unknown" = "CAPI upit prekinut: nepoznat režim igre";
 
+/* EDMarketConnector.py: CAPI queries aborted because GameVersion unknown; EDMarketConnector.py: CAPI fleetcarrier query aborted because GameVersion unknown; In files: EDMarketConnector.py:1089; EDMarketConnector.py:1170; */
+"CAPI query aborted: GameVersion unknown" = "CAPI upit prekinut: nepoznat GameVersion";
+
 /* EDMarketConnector.py: CAPI queries aborted because current star system name unknown; In files: EDMarketConnector.py:1095; */
 "CAPI query aborted: Current system unknown" = "CAPI upit prekinut: nepoznat trenutni sistem";
 
@@ -141,6 +173,15 @@
 
 /* EDMarketConnector.py: Status - Attempting to retrieve data from Frontier CAPI; In files: EDMarketConnector.py:1128; EDMarketConnector.py:1179; */
 "Fetching data..." = "Preuzimanje podataka...";
+
+/* EDMarketConnector.py: CAPI fleetcarrier query aborted because of killswitch; In files: EDMarketConnector.py:1157; */
+"CAPI fleetcarrier disabled by killswitch" = "CAPI fleetcarrier onemogućen putem sistemskog prekidača";
+
+/* EDMarketConnector.py: No data was returned for the Fleet Carrier from the Frontier CAPI; In files: EDMarketConnector.py:1219; */
+"CAPI: No Fleet Carrier data returned" = "CAPI: Fleet Carrier podaci nisu dobijeni";
+
+/* EDMarketConnector.py: We didn't have the Fleet Carrier callsign when we should have; In files: EDMarketConnector.py:1223; */
+"CAPI: Fleet Carrier data incomplete" = "CAPI: Fleet Carrier podaci nisu kompletni";
 
 /* EDMarketConnector.py: No data was returned for the commander from the Frontier CAPI; In files: EDMarketConnector.py:1242; */
 "CAPI: No commander data returned" = "CAPI: Nema podataka o komandantu";
@@ -190,6 +231,24 @@
 /* EDMarketConnector.py: Popup window title for list of 'enabled' plugins that don't work with Python 3.x; In files: EDMarketConnector.py:2274; */
 "EDMC: Plugins Without Python 3.x Support" = "EDMC: Dodaci (plugins) bez Python 3.x podrške";
 
+/* EDMarketConnector.py: Popup window title for list of 'broken' plugins that failed to load; In files: EDMarketConnector.py:2285; */
+"EDMC: Broken Plugins" = "EDMC: Neispravni dodaci (plugins)";
+
+/* EDMarketConnector.py: Popup-text about 'broken' plugins that failed to load; In files: EDMarketConnector.py:2266; */
+"One or more of your enabled plugins failed to load. Please see the list on the '{PLUGINS}' tab of '{FILE}' > '{SETTINGS}'. This could be caused by a wrong folder structure. The load.py file should be located under plugins/PLUGIN_NAME/load.py.\r\n\r\nYou can disable a plugin by renaming its folder to have '{DISABLED}' on the end of the name." = "Jedan ili više aktiviranih dodataka (plugins) nemaju podršku za Python 3.x. Pogledajte listu u '{PLUGINS}' tabu u '{FILE}' > '{SETTINGS}'. Pogrešna struktura foldera može da uzrokuje problem. Fajl load.py treba da bude smješten u plugins/PLUGIN_NAME/load.py.\n\nMožete deaktivirati dodatak (plugin) dodavanjem '{DISABLED}' na kraju imena njegovog foldera.";
+
+/* EDMarketConnector.py: Popup-text about Reset Providers; In files: EDMarketConnector.py:2146; */
+"One or more of your URL Providers were invalid, and have been reset:\r\n\r\n" = "Jedan ili više URL Providera su pogrešni i zbog toga su resetovani:\n";
+
+/* EDMarketConnector.py: Text About What Provider Was Reset; In files: EDMarketConnector.py:2148; */
+"{PROVIDER} was set to {OLDPROV}, and has been reset to {NEWPROV}\r\n" = "{PROVIDER} je bio postavljen na {OLDPROV}, a sad je resetovan na {NEWPROV}\n";
+
+/* EDMarketConnector.py: Popup window title for Reset Providers; In files: EDMarketConnector.py:2161; */
+"EDMC: Default Providers Reset" = "EDMC: Standardni Provideri su resetovani";
+
+/* EDMarketConnector.py: Await Full CMDR Login to Game; In files: EDMarketConnector.py:813; */
+"Awaiting Full CMDR Login" = "Čekam da se CMDR potpuno uloguje";
+
 /* journal_lock.py: Title text on popup when Journal directory already locked; In files: journal_lock.py:208; */
 "Journal directory already locked" = "Journal direktorijum je već zaključan";
 
@@ -205,13 +264,13 @@
 /* l10n.py: The system default language choice in Settings > Appearance; prefs.py: Settings > Configuration - Label on 'reset journal files location to default' button; prefs.py: The system default language choice in Settings > Appearance; prefs.py: Label for 'Default' theme radio button; In files: l10n.py:193; prefs.py:455; prefs.py:709; prefs.py:742; */
 "Default" = "Standardna";
 
-/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:74; coriolis.py:77; coriolis.py:123; coriolis.py:139; coriolis.py:145; */
+/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:48; coriolis.py:74; coriolis.py:77; coriolis.py:94; coriolis.py:123; coriolis.py:139; coriolis.py:145; coriolis.py:179; coriolis.py:182; */
 "Auto" = "Automatski";
 
-/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:75; coriolis.py:121; coriolis.py:137; */
+/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:49; coriolis.py:75; coriolis.py:95; coriolis.py:121; coriolis.py:137; coriolis.py:180; */
 "Normal" = "Normalni";
 
-/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:76; coriolis.py:122; coriolis.py:138; */
+/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:50; coriolis.py:76; coriolis.py:96; coriolis.py:122; coriolis.py:138; coriolis.py:181; */
 "Beta" = "Beta";
 
 /* coriolis.py: Settings>Coriolis: Help/hint for changing coriolis URLs; In files: coriolis.py:91:93; */
@@ -259,9 +318,6 @@
 /* eddn.py: Status text shown while attempting to send data; In files: eddn.py:2507; */
 "Sending data to EDDN..." = "Slanje podataka na EDDN...";
 
-/* edsm.py: Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:308; */
-"Send flight log and Cmdr status to EDSM" = "Pošalji log leta i Cmdr status na EDSM";
-
 /* edsm.py: Settings>EDSM - Label on header/URL to EDSM API key page; In files: edsm.py:319; */
 "Elite Dangerous Star Map credentials" = "Kredencijali za Elite Dangerous Star Map";
 
@@ -277,6 +333,9 @@
 /* edsm.py: EDSM plugin - Journal handling disabled by killswitch; In files: edsm.py:516; */
 "EDSM Handler disabled. See Log." = "EDSM obrada je deaktivirana. Pogledajte Log.";
 
+/* edsm.py: EDSM - Only Live data; In files: edsm.py:632; */
+"EDSM only accepts Live galaxy data" = "EDCM prihvata samo Live galaxy podatke";
+
 /* edsm.py: EDSM Plugin - Error message from EDSM API; In files: edsm.py:916; edsm.py:1048; */
 "Error: EDSM {MSG}" = "Greška: EDSM {MSG}";
 
@@ -284,7 +343,7 @@
 "Error: Can't connect to EDSM" = "Greška: Nemoguće povezivanje sa EDSM";
 
 /* inara.py: Checkbox to enable INARA API Usage; In files: inara.py:257; */
-"Send flight log and Cmdr status to Inara" = "Pošalji log leta i Cmdr status na Inara";
+"Send flight log and Cmdr status to Inara" = "Pošalji log leta i CMDR status na Inara";
 
 /* inara.py: Text for INARA API keys link ( goes to https://inara.cz/settings-api ); In files: inara.py:269; */
 "Inara credentials" = "Kredencijali za Inara";
@@ -297,9 +356,6 @@
 
 /* inara.py: INARA API returned some kind of error (error message will be contained in {MSG}); In files: inara.py:1650; inara.py:1663; */
 "Error: Inara {MSG}" = "Greška: Inara {MSG}";
-
-/* prefs.py: File > Preferences menu entry for macOS; In files: prefs.py:237; */
-"Preferences" = "Podešavanja";
 
 /* prefs.py: Settings > Output - choosing what data to save to files; In files: prefs.py:335; */
 "Please choose what data to save" = "Izaberite koji podaci se snimaju";
@@ -319,9 +375,6 @@
 /* prefs.py: Settings > Output - Label for "where files are located"; In files: prefs.py:379; prefs.py:398; */
 "File location" = "Lokacija fajlova";
 
-/* prefs.py: macOS Preferences - files location selection button; In files: prefs.py:387; prefs.py:437; */
-"Change..." = "Promijeni...";
-
 /* prefs.py: NOT-macOS Settings - files location selection button; prefs.py: NOT-macOS Setting - files location selection button; In files: prefs.py:390; prefs.py:440; */
 "Browse..." = "Potraži...";
 
@@ -331,20 +384,14 @@
 /* prefs.py: Settings > Configuration - Label for Journal files location; In files: prefs.py:431; prefs.py:446; */
 "E:D journal file location" = "Lokacija E:D journal fajlova";
 
-/* prefs.py: Hotkey/Shortcut settings prompt on OSX; In files: prefs.py:490; */
-"Keyboard shortcut" = "Prečica";
+/* prefs.py: Settings > Configuration - Label for CAPI section; In files: prefs.py:469; */
+"CAPI Settings" = "CAPI Podešavanja";
+
+/* prefs.py: Configuration - Enable or disable the Fleet Carrier CAPI calls; In files: prefs.py:475; */
+"Enable Fleet Carrier CAPI Queries" = "Omogući Fleet Carrier CAPI upite";
 
 /* prefs.py: Hotkey/Shortcut settings prompt on Windows; In files: prefs.py:492; */
 "Hotkey" = "Prečica";
-
-/* prefs.py: macOS Preferences > Configuration - restart the app message; In files: prefs.py:501; */
-"Re-start {APP} to use shortcuts" = "Restartujte {APP} da bi ste koristili prečice";
-
-/* prefs.py: macOS - Configuration - need to grant the app permission for keyboard shortcuts; In files: prefs.py:510; */
-"{APP} needs permission to use shortcuts" = "{APP} traži dozvolu da koristi prečice";
-
-/* prefs.py: Shortcut settings button on OSX; In files: prefs.py:515; */
-"Open System Preferences" = "Otvori sistemska podešavanja";
 
 /* prefs.py: Configuration - Act on hotkey only when ED is in foreground; In files: prefs.py:538; */
 "Only when Elite: Dangerous is the active app" = "Samo kada je Elite: Dangerous aktivna aplikacija";
@@ -421,9 +468,6 @@
 /* prefs.py: Label for location of third-party plugins folder; In files: prefs.py:908; */
 "Plugins folder" = "Folder za dodatke (plugins)";
 
-/* prefs.py: Label on button used to open a filesystem folder; In files: prefs.py:915; */
-"Open" = "Otvori";
-
 /* prefs.py: Tip/label about how to disable plugins; In files: prefs.py:923; */
 "Tip: You can disable a plugin by{CR}adding '{EXT}' to its folder name" = "Savjet: Možete da deaktivirate dodatak (plugin){CR}dodavanjem '{EXT}' na ime njegovog foldera";
 
@@ -431,13 +475,19 @@
 "Enabled Plugins" = "Aktivirani dodaci (plugins)";
 
 /* prefs.py: Plugins - Label for list of 'enabled' plugins that don't work with Python 3.x; In files: prefs.py:954; */
-"Plugins Without Python 3.x Support:" = "Dodaci (plugins) bez Python 3.x podrške:";
+"Plugins Without Python 3.x Support" = "Dodaci (plugins) bez Python 3.x podrške";
 
 /* prefs.py: Plugins - Label on URL to documentation about migrating plugins from Python 2.7; In files: prefs.py:962; */
 "Information on migrating plugins" = "Informacije o migraciji dodataka (plugins)";
 
+/* prefs.py: Plugins - Label for list of 'broken' plugins that failed to load; In files: prefs.py:1039; */
+"Broken Plugins" = "Neispravni dodaci (plugins)";
+
 /* prefs.py: Lable on list of user-disabled plugins; In files: prefs.py:977; */
 "Disabled Plugins" = "Deaktivirani dodaci (plugins)";
+
+/* prefs.py: Catch & Record Profiler Errors; */
+"Error in System Profiler" = "Greša u System Profileru";
 
 /* stats.py: Cmdr stats; In files: stats.py:58; */
 "Balance" = "Balans";
@@ -738,3 +788,25 @@
 
 /* stats.py: Status dialog title; In files: stats.py:418; */
 "Ships" = "Brodovi";
+
+/* update.py: Update Available Text; In files: update.py:229; */
+"{NEWVER} is available" = "{NEWVER} je dostupna";
+
+/* prefs.py: Stable Version of EDMC; */
+"Stable" = "Stabilna";
+
+/* prefs.py: Select the Update Track (Beta, Stable); */
+"Update Track" = "Kanal osvježavanja";
+
+/* EDMarketConnector.py: Inform the user the Update Track has changed; */
+"Update Track Changed to {TRACK}" = "Kanal za osvježavanje je promijenjen u {TRACK}";
+
+/* EDMarketConnector.py: Inform User of Beta -> Stable Transition Risks; */
+"Update track changed to Stable from Beta. You will no longer receive Beta updates. You will stay on your current Beta version until the next Stable release.\r\n\r\nYou can manually revert to the latest Stable version. To do so, you must download and install the latest Stable version manually. Note that this may introduce bugs or break completely if downgrading between major versions with significant changes.\r\n\r\nDo you want to open GitHub to download the latest release?" = "Kanal za osvježavanje je promijenjen iz Beta u Stabilni. Više nećete primati Beta osvježavanja. Ostaćete na trenutnoj Beta verziji do sljedeće Stabilne verzije.\n\nMožete se ručno vratiti na posljednju Stabilnu verziju. Da biste to učinili morate da skinete i ručno instališete posljednju Stabilnu verziju. Ova procedura može da uvede nove bugove ili da potpuno onesposobi program ako prelazite između verzija sa mnogo značajnih promjena.\n\nDa li želite da otvorite GitHub stranicu za download posljednje verzije?";
+
+/* myNotebook.py: Can't Paste Images or Files in Text; */
+"Cannot paste non-text content." = "Nije moguće da se zalijepi netekstualni sadržaj.";
+
+/* ttkHyperlinkLabel.py: Open Element In Selected Provider; */
+"Open in {URL}" = "Otvori u {URL}";
+

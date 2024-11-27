@@ -61,12 +61,6 @@
 /* EDMarketConnector.py: 'Edit' menu title on OSX; EDMarketConnector.py: 'Edit' menu title; In files: EDMarketConnector.py:922; EDMarketConnector.py:940; EDMarketConnector.py:943; */
 "Edit" = "Muokkaa";
 
-/* EDMarketConnector.py: 'View' menu title on OSX; In files: EDMarketConnector.py:923; */
-"View" = "Näytä";
-
-/* EDMarketConnector.py: 'Window' menu title on OSX; In files: EDMarketConnector.py:924; */
-"Window" = "Ikkuna";
-
 /* EDMarketConnector.py: Help' menu title on OSX; EDMarketConnector.py: 'Help' menu title; In files: EDMarketConnector.py:925; EDMarketConnector.py:941; EDMarketConnector.py:944; */
 "Help" = "Apua";
 
@@ -190,11 +184,11 @@
 /* eddn.py: EDDN delay sending until docked option is on, this message notes that a send was skipped due to this; In files: eddn.py:2063; */
 "Delay sending until docked" = "Lähetä tiedot vasta telakoitumisen jälkeen";
 
+/* eddn.py: Killswitch disabled EDDN; In files: eddn.py:2178; */
+"EDDN journal handler disabled. See Log." = "EDDB lokikirjan käsittelijä ei käytössä. Katso lokitiedot.";
+
 /* eddn.py: Status text shown while attempting to send data; In files: eddn.py:2507; */
 "Sending data to EDDN..." = "Lähetetään tietoja EDDN:ään...";
-
-/* edsm.py: Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:308; */
-"Send flight log and Cmdr status to EDSM" = "Lähetä lentoloki ja komentajatiedot EDSM:ään";
 
 /* edsm.py: Settings>EDSM - Label on header/URL to EDSM API key page; In files: edsm.py:319; */
 "Elite Dangerous Star Map credentials" = "Elite Dangerous Star Map -kirjautuminen";
@@ -229,9 +223,6 @@
 /* inara.py: INARA API returned some kind of error (error message will be contained in {MSG}); In files: inara.py:1650; inara.py:1663; */
 "Error: Inara {MSG}" = "Inaran virhe: {MSG}";
 
-/* prefs.py: File > Preferences menu entry for macOS; In files: prefs.py:237; */
-"Preferences" = "Valinnat";
-
 /* prefs.py: Settings > Output - choosing what data to save to files; In files: prefs.py:335; */
 "Please choose what data to save" = "Valitse mitkä tiedot tallennetaan";
 
@@ -250,9 +241,6 @@
 /* prefs.py: Settings > Output - Label for "where files are located"; In files: prefs.py:379; prefs.py:398; */
 "File location" = "Tiedostosijainti";
 
-/* prefs.py: macOS Preferences - files location selection button; In files: prefs.py:387; prefs.py:437; */
-"Change..." = "Muuta...";
-
 /* prefs.py: NOT-macOS Settings - files location selection button; prefs.py: NOT-macOS Setting - files location selection button; In files: prefs.py:390; prefs.py:440; */
 "Browse..." = "Selaa...";
 
@@ -262,20 +250,8 @@
 /* prefs.py: Settings > Configuration - Label for Journal files location; In files: prefs.py:431; prefs.py:446; */
 "E:D journal file location" = "E:D lokikirjan tiedostosijainti";
 
-/* prefs.py: Hotkey/Shortcut settings prompt on OSX; In files: prefs.py:490; */
-"Keyboard shortcut" = "Näppäimistöoikopolku";
-
 /* prefs.py: Hotkey/Shortcut settings prompt on Windows; In files: prefs.py:492; */
 "Hotkey" = "Pikanäppäin";
-
-/* prefs.py: macOS Preferences > Configuration - restart the app message; In files: prefs.py:501; */
-"Re-start {APP} to use shortcuts" = "Käynnistä {APP} uudelleen käyttääksesi pikanäppäimiä";
-
-/* prefs.py: macOS - Configuration - need to grant the app permission for keyboard shortcuts; In files: prefs.py:510; */
-"{APP} needs permission to use shortcuts" = "{APP} tarvitsee lupasi pikakuvakkeiden käyttämiseen";
-
-/* prefs.py: Shortcut settings button on OSX; In files: prefs.py:515; */
-"Open System Preferences" = "Avaa järjestelmän asetukset";
 
 /* prefs.py: Configuration - Act on hotkey only when ED is in foreground; In files: prefs.py:538; */
 "Only when Elite: Dangerous is the active app" = "Vain jos Elite:Dangerous on käynnissä";
@@ -343,9 +319,6 @@
 /* prefs.py: Label for location of third-party plugins folder; In files: prefs.py:908; */
 "Plugins folder" = "Lisäosien hakemistosijainti";
 
-/* prefs.py: Label on button used to open a filesystem folder; In files: prefs.py:915; */
-"Open" = "Avaa";
-
 /* prefs.py: Tip/label about how to disable plugins; In files: prefs.py:923; */
 "Tip: You can disable a plugin by{CR}adding '{EXT}' to its folder name" = "Vihje: Voit poistaa lisäosan käytöstä{CR}lisäämällä '{EXT}' sen hakemistonimeen";
 
@@ -353,7 +326,7 @@
 "Enabled Plugins" = "Käytössä olevat liitännäiset";
 
 /* prefs.py: Plugins - Label for list of 'enabled' plugins that don't work with Python 3.x; In files: prefs.py:954; */
-"Plugins Without Python 3.x Support:" = "Lisäosat, joissa ei ole Python 3.x -tukea:";
+"Plugins Without Python 3.x Support" = "Lisäosat ilman Python 3.x -tukea";
 
 /* prefs.py: Plugins - Label on URL to documentation about migrating plugins from Python 2.7; In files: prefs.py:962; */
 "Information on migrating plugins" = "Tietoja lisäosien siirrosta";
@@ -588,3 +561,4 @@
 
 /* stats.py: Status dialog title; In files: stats.py:418; */
 "Ships" = "Alukset";
+

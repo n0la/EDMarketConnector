@@ -19,15 +19,16 @@ on:
 jobs:
   push_checks:
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
+        cache: 'pip' # caching pip dependencies
         python-version-file: '.python-version'
     - name: Install dependencies
       run: |
@@ -68,3 +69,7 @@ jobs:
     - name: mypy type checks
       run: |
           ./scripts/mypy-all.sh --platform win32
+
+    - name: translation checks
+      run: |
+          python ./scripts/find_localised_strings.py --compare-lang L10n/en.template --directory . --ignore coriolis-data

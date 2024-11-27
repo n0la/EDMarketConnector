@@ -1,26 +1,27 @@
 """
-Theme support.
+theme.py - Theme support.
+
+Copyright (c) EDCD, All Rights Reserved
+Licensed under the GNU General Public License.
+See LICENSE file.
 
 Because of various ttk limitations this app is an unholy mix of Tk and ttk widgets.
 So can't use ttk's theme support. So have to change colors manually.
 """
+from __future__ import annotations
 
 import os
 import sys
 import tkinter as tk
-from os.path import join
 from tkinter import font as tk_font
 from tkinter import ttk
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Set, Tuple
-
+from typing import Callable
+from l10n import translations as tr
 from config import config
 from EDMCLogging import get_main_logger
 from ttkHyperlinkLabel import HyperlinkLabel
 
 logger = get_main_logger()
-
-if TYPE_CHECKING:
-    def _(x: str) -> str: ...
 
 if __debug__:
     from traceback import print_exc
@@ -32,11 +33,13 @@ if sys.platform == "linux":
 if sys.platform == 'win32':
     import ctypes
     from ctypes.wintypes import DWORD, LPCVOID, LPCWSTR
+    import win32gui
     AddFontResourceEx = ctypes.windll.gdi32.AddFontResourceExW
     AddFontResourceEx.restypes = [LPCWSTR, DWORD, LPCVOID]  # type: ignore
     FR_PRIVATE = 0x10
     FR_NOT_ENUM = 0x20
-    AddFontResourceEx(join(config.respath, u'EUROCAPS.TTF'), FR_PRIVATE, 0)
+    font_path = config.respath_path / 'EUROCAPS.TTF'
+    AddFontResourceEx(str(font_path), FR_PRIVATE, 0)
 
 elif sys.platform == 'linux':
     # pyright: reportUnboundVariable=false
@@ -121,7 +124,7 @@ elif sys.platform == 'linux':
             dpy = None
 
 
-class _Theme(object):
+class _Theme:
 
     # Enum ?  Remember these are, probably, based on 'value' of a tk
     # RadioButton set.  Looking in prefs.py, they *appear* to be hard-coded
@@ -132,20 +135,20 @@ class _Theme(object):
 
     def __init__(self) -> None:
         self.active: int | None = None  # Starts out with no theme
-        self.minwidth: Optional[int] = None
-        self.widgets: Dict[tk.Widget | tk.BitmapImage, Set] = {}
-        self.widgets_pair: List = []
-        self.defaults: Dict = {}
-        self.current: Dict = {}
+        self.minwidth: int | None = None
+        self.widgets: dict[tk.Widget | tk.BitmapImage, set] = {}
+        self.widgets_pair: list = []
+        self.defaults: dict = {}
+        self.current: dict = {}
         self.default_ui_scale: float | None = None  # None == not yet known
         self.startup_ui_scale: int | None = None
 
     def register(self, widget: tk.Widget | tk.BitmapImage) -> None:  # noqa: CCR001, C901
         # Note widget and children for later application of a theme. Note if
         # the widget has explicit fg or bg attributes.
-        assert isinstance(widget, tk.Widget) or isinstance(widget, tk.BitmapImage), widget
+        assert isinstance(widget, (tk.BitmapImage, tk.Widget)), widget
         if not self.defaults:
-            # Can't initialise this til window is created       # Windows, MacOS
+            # Can't initialise this til window is created       # Windows
             self.defaults = {
                 'fg': tk.Label()['foreground'],         # SystemButtonText, systemButtonText
                 'bg': tk.Label()['background'],         # SystemButtonFace, White
@@ -169,14 +172,14 @@ class _Theme(object):
                     attribs.add('fg')
                 if widget['background'] not in ['', self.defaults['bitmapbg']]:
                     attribs.add('bg')
-            elif isinstance(widget, tk.Entry) or isinstance(widget, ttk.Entry):
+            elif isinstance(widget, (tk.Entry, ttk.Entry)):
                 if widget['foreground'] not in ['', self.defaults['entryfg']]:
                     attribs.add('fg')
                 if widget['background'] not in ['', self.defaults['entrybg']]:
                     attribs.add('bg')
                 if 'font' in widget.keys() and str(widget['font']) not in ['', self.defaults['entryfont']]:
                     attribs.add('font')
-            elif isinstance(widget, tk.Frame) or isinstance(widget, ttk.Frame) or isinstance(widget, tk.Canvas):
+            elif isinstance(widget, (tk.Canvas, tk.Frame, ttk.Frame)):
                 if (
                     ('background' in widget.keys() or isinstance(widget, tk.Canvas))
                     and widget['background'] not in ['', self.defaults['frame']]
@@ -200,21 +203,21 @@ class _Theme(object):
                     attribs.add('font')
             self.widgets[widget] = attribs
 
-        if isinstance(widget, tk.Frame) or isinstance(widget, ttk.Frame):
+        if isinstance(widget, (tk.Frame, ttk.Frame)):
             for child in widget.winfo_children():
                 self.register(child)
 
-    def register_alternate(self, pair: Tuple, gridopts: Dict) -> None:
+    def register_alternate(self, pair: tuple, gridopts: dict) -> None:
         self.widgets_pair.append((pair, gridopts))
 
     def button_bind(
-        self, widget: tk.Widget, command: Callable, image: Optional[tk.BitmapImage] = None
+        self, widget: tk.Widget, command: Callable, image: tk.BitmapImage | None = None
     ) -> None:
         widget.bind('<Button-1>', command)
         widget.bind('<Enter>', lambda e: self._enter(e, image))
         widget.bind('<Leave>', lambda e: self._leave(e, image))
 
-    def _enter(self, event: tk.Event, image: Optional[tk.BitmapImage]) -> None:
+    def _enter(self, event: tk.Event, image: tk.BitmapImage | None) -> None:
         widget = event.widget
         if widget and widget['state'] != tk.DISABLED:
             try:
@@ -231,7 +234,7 @@ class _Theme(object):
                 except Exception:
                     logger.exception(f'Failure configuring image: {image=}')
 
-    def _leave(self, event: tk.Event, image: Optional[tk.BitmapImage]) -> None:
+    def _leave(self, event: tk.Event, image: tk.BitmapImage | None) -> None:
         widget = event.widget
         if widget and widget['state'] != tk.DISABLED:
             try:
@@ -263,8 +266,7 @@ class _Theme(object):
             # (Mostly) system colors
             style = ttk.Style()
             self.current = {
-                'background': (sys.platform == 'darwin' and 'systemMovableModalBackground' or
-                               style.lookup('TLabel', 'background')),
+                'background': (style.lookup('TLabel', 'background')),
                 'foreground': style.lookup('TLabel', 'foreground'),
                 'activebackground': (sys.platform == 'win32' and 'SystemHighlight' or
                                      style.lookup('TLabel', 'background', ['active'])),
@@ -287,7 +289,7 @@ class _Theme(object):
                 # Font only supports Latin 1 / Supplement / Extended, and a
                 # few General Punctuation and Mathematical Operators
                 # LANG: Label for commander name in main window
-                'font': (theme > 1 and not 0x250 < ord(_('Cmdr')[0]) < 0x3000 and
+                'font': (theme > 1 and not 0x250 < ord(tr.tl('Cmdr')[0]) < 0x3000 and
                          tk_font.Font(family='Euro Caps', size=10, weight=tk_font.NORMAL) or
                          'TkDefaultFont'),
             }
@@ -299,13 +301,13 @@ class _Theme(object):
         Also, register it for future updates.
         :param widget: Target widget.
         """
-        assert isinstance(widget, tk.Widget) or isinstance(widget, tk.BitmapImage), widget
+        assert isinstance(widget, (tk.BitmapImage, tk.Widget)), widget
         if not self.current:
             return  # No need to call this for widgets created in plugin_app()
 
         self.register(widget)
         self._update_widget(widget)
-        if isinstance(widget, tk.Frame) or isinstance(widget, ttk.Frame):
+        if isinstance(widget, (tk.Frame, ttk.Frame)):
             for child in widget.winfo_children():
                 self._update_widget(child)
 
@@ -314,7 +316,7 @@ class _Theme(object):
         if widget not in self.widgets:
             if isinstance(widget, tk.Widget):
                 w_class = widget.winfo_class()
-                w_keys: List[str] = widget.keys()
+                w_keys: list[str] = widget.keys()
 
             else:
                 # There is no tk.BitmapImage.winfo_class()
@@ -325,7 +327,7 @@ class _Theme(object):
             assert_str = f'{w_class} {widget} "{"text" in w_keys and widget["text"]}"'
             raise AssertionError(assert_str)
 
-        attribs: Set = self.widgets.get(widget, set())
+        attribs: set = self.widgets.get(widget, set())
 
         try:
             if isinstance(widget, tk.BitmapImage):
@@ -355,14 +357,12 @@ class _Theme(object):
                 # e.g. tk.Button, tk.Label, tk.Menu
                 if 'fg' not in attribs:
                     widget['foreground'] = self.current['foreground']
-                    widget['activeforeground'] = self.current['activeforeground'],
+                    widget['activeforeground'] = self.current['activeforeground']
                     widget['disabledforeground'] = self.current['disabledforeground']
 
                 if 'bg' not in attribs:
                     widget['background'] = self.current['background']
                     widget['activebackground'] = self.current['activebackground']
-                    if sys.platform == 'darwin' and isinstance(widget, tk.Button):
-                        widget['highlightbackground'] = self.current['background']
 
                 if 'font' not in attribs:
                     widget['font'] = self.current['font']
@@ -419,33 +419,10 @@ class _Theme(object):
 
         if self.active == theme:
             return  # Don't need to mess with the window manager
+        self.active = theme
 
-        else:
-            self.active = theme
-
-        if sys.platform == 'darwin':
-            from AppKit import NSAppearance, NSApplication, NSMiniaturizableWindowMask, NSResizableWindowMask
-            root.update_idletasks()  # need main window to be created
-            if theme == self.THEME_DEFAULT:
-                appearance = NSAppearance.appearanceNamed_('NSAppearanceNameAqua')
-
-            else:  # Dark (Transparent only on win32)
-                appearance = NSAppearance.appearanceNamed_('NSAppearanceNameDarkAqua')
-
-            for window in NSApplication.sharedApplication().windows():
-                window.setStyleMask_(window.styleMask() & ~(
-                    NSMiniaturizableWindowMask | NSResizableWindowMask))  # disable zoom
-                window.setAppearance_(appearance)
-
-        elif sys.platform == 'win32':
-            GWL_STYLE = -16  # noqa: N806 # ctypes
-            WS_MAXIMIZEBOX = 0x00010000  # noqa: N806 # ctypes
-            # tk8.5.9/win/tkWinWm.c:342
-            GWL_EXSTYLE = -20  # noqa: N806 # ctypes
-            WS_EX_APPWINDOW = 0x00040000  # noqa: N806 # ctypes
-            WS_EX_LAYERED = 0x00080000  # noqa: N806 # ctypes
-            GetWindowLongW = ctypes.windll.user32.GetWindowLongW  # noqa: N806 # ctypes
-            SetWindowLongW = ctypes.windll.user32.SetWindowLongW  # noqa: N806 # ctypes
+        if sys.platform == 'win32':
+            import win32con
 
             # FIXME: Lose the "treat this like a boolean" bullshit
             if theme == self.THEME_DEFAULT:
@@ -462,14 +439,17 @@ class _Theme(object):
 
             root.withdraw()
             root.update_idletasks()  # Size and windows styles get recalculated here
-            hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
-            SetWindowLongW(hwnd, GWL_STYLE, GetWindowLongW(hwnd, GWL_STYLE) & ~WS_MAXIMIZEBOX)  # disable maximize
+            hwnd = win32gui.GetParent(root.winfo_id())
+            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE,
+                                   win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+                                   & ~win32con.WS_MAXIMIZEBOX)  # disable maximize
 
             if theme == self.THEME_TRANSPARENT:
-                SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW | WS_EX_LAYERED)  # Add to taskbar
+                win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE,
+                                       win32con.WS_EX_APPWINDOW | win32con.WS_EX_LAYERED)  # Add to taskbar
 
             else:
-                SetWindowLongW(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW)  # Add to taskbar
+                win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, win32con.WS_EX_APPWINDOW)  # Add to taskbar
 
             root.deiconify()
             root.wait_visibility()  # need main window to be displayed before returning

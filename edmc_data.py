@@ -4,7 +4,6 @@ Static data.
 For easy reference any variable should be prefixed with the name of the file it
 was either in originally, or where the primary code utilising it is.
 """
-from collections import OrderedDict
 
 # Map numeric 'demand/supply brackets' to the names as shown in-game.
 commodity_bracketmap = {
@@ -57,18 +56,21 @@ edshipyard_slot_map = {
 
 # Map API module names to in-game names
 
-outfitting_armour_map = OrderedDict([
-    ('grade1',   'Lightweight Alloy'),
-    ('grade2',   'Reinforced Alloy'),
-    ('grade3',   'Military Grade Composite'),
-    ('mirrored', 'Mirrored Surface Composite'),
-    ('reactive', 'Reactive Surface Composite'),
-])
+outfitting_armour_map = {
+    'grade1': 'Lightweight Alloy',
+    'grade2': 'Reinforced Alloy',
+    'grade3': 'Military Grade Composite',
+    'mirrored': 'Mirrored Surface Composite',
+    'reactive': 'Reactive Surface Composite',
+}
+
 
 outfitting_weapon_map = {
     'advancedtorppylon':                 'Torpedo Pylon',
     'atdumbfiremissile':                 'AX Missile Rack',
     'atmulticannon':                     'AX Multi-Cannon',
+    ('atmulticannon', 'v2'):             'Enhanced AX Multi-Cannon',
+    ('atdumbfiremissile', 'v2'):         'Enhanced AX Missile Rack',
     'basicmissilerack':                  'Seeker Missile Rack',
     'beamlaser':                         'Beam Laser',
     ('beamlaser', 'heat'):               'Retributor Beam Laser',
@@ -88,6 +90,8 @@ outfitting_weapon_map = {
     'mining_abrblstr':                   'Abrasion Blaster',
     'mining_seismchrgwarhd':             'Seismic Charge Launcher',
     'mining_subsurfdispmisle':           'Sub-Surface Displacement Missile',
+    'human_extraction':                  'Sub-Surface Extraction Missile',
+    'atventdisruptorpylon':              'Guardian Nanite Torpedo Pylon',
     'mininglaser':                       'Mining Laser',
     ('mininglaser', 'advanced'):         'Mining Lance Beam Laser',
     'multicannon':                       'Multi-Cannon',
@@ -266,6 +270,11 @@ outfitting_weaponrating_map = {
     'hpt_slugshot_turret_medium':                'D',
     'hpt_slugshot_turret_large':                 'C',
     'hpt_xenoscannermk2_basic_tiny':             '?',
+    'hpt_atmulticannon_gimbal_large':            'C',
+    'hpt_atmulticannon_gimbal_medium':           'E',
+    'hpt_human_extraction_fixed_medium':         'B',
+    'hpt_atventdisruptorpylon_fixed_medium':     'I',
+    'hpt_atventdisruptorpylon_fixed_large':      'I',
 }
 
 # Old standard weapon variants
@@ -278,13 +287,14 @@ outfitting_weaponoldvariant_map = {
 }
 
 outfitting_countermeasure_map = {
-    'antiunknownshutdown':        ('Shutdown Field Neutraliser', 'F'),
-    'chafflauncher':              ('Chaff Launcher', 'I'),
-    'electroniccountermeasure':   ('Electronic Countermeasure', 'F'),
-    'heatsinklauncher':           ('Heat Sink Launcher', 'I'),
-    'plasmapointdefence':         ('Point Defence', 'I'),
-    'xenoscanner':                ('Xeno Scanner', 'E'),
-    'xenoscannermk2':             ('Unknown Xeno Scanner Mk II', '?'),
+    'antiunknownshutdown':          ('Shutdown Field Neutraliser', 'F'),
+    ('antiunknownshutdown', 'v2'):  ('Thargoid Pulse Neutraliser', 'E'),
+    'chafflauncher':                ('Chaff Launcher', 'I'),
+    'electroniccountermeasure':     ('Electronic Countermeasure', 'F'),
+    'heatsinklauncher':             ('Heat Sink Launcher', 'I'),
+    'plasmapointdefence':           ('Point Defence', 'I'),
+    'xenoscanner':                  ('Xeno Scanner', 'E'),
+    'xenoscannermk2':               ('Unknown Xeno Scanner Mk II', '?'),
 }
 
 outfitting_utility_map = {
@@ -347,6 +357,7 @@ outfitting_standard_map = {
     'guardianpowerdistributor':     'Guardian Hybrid Power Distributor',
     'guardianpowerplant':           'Guardian Hybrid Power Plant',
     'hyperdrive':                   'Frame Shift Drive',
+    ('hyperdrive', 'overcharge'):   'Frame Shift Drive (SCO)',
     'lifesupport':                  'Life Support',
     # 'planetapproachsuite':        handled separately
     'powerdistributor':             'Power Distributor',
@@ -376,6 +387,11 @@ outfitting_internal_map = {
     'refinery':                     'Refinery',
     'recon':                        'Recon Limpet Controller',
     'repair':                       'Repair Limpet Controller',
+    'rescue':                       'Rescue Limpet Controller',
+    'mining':                       'Mining Multi Limpet Controller',
+    'xeno':                         'Xeno Multi Limpet Controller',
+    'operations':                   'Operations Multi Limpet Controller',
+    'universal':                    'Universal Multi Limpet Controller',
     'repairer':                     'Auto Field-Maintenance Unit',
     'resourcesiphon':               'Hatch Breaker Limpet Controller',
     'shieldcellbank':               'Shield Cell Bank',
@@ -383,6 +399,7 @@ outfitting_internal_map = {
     ('shieldgenerator', 'fast'):    'Bi-Weave Shield Generator',
     ('shieldgenerator', 'strong'):  'Prismatic Shield Generator',
     'unkvesselresearch':            'Research Limpet Controller',
+    'expmodulestabiliser':          'Experimental Weapon Stabiliser',
 }
 
 # Dashboard Flags constants
@@ -484,11 +501,13 @@ ship_name_map = {
     'mamba':                        'Mamba',
     'orca':                         'Orca',
     'python':                       'Python',
+    'python_nx':                    'Python Mk II',
     'scout':                        'Taipan Fighter',
     'sidewinder':                   'Sidewinder',
     'testbuggy':                    'Scarab',
     'type6':                        'Type-6 Transporter',
     'type7':                        'Type-7 Transporter',
+    'type8':                        'Type-8 Transporter',
     'type9':                        'Type-9 Heavy',
     'type9_military':               'Type-10 Defender',
     'typex':                        'Alliance Chieftain',

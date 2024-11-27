@@ -1,38 +1,409 @@
 This is the master changelog for Elite Dangerous Market Connector.  Entries are in reverse chronological order (latest first).
 ---
-
-Copyrights
+* We currently test against, and package with, Python 3.11.9, 32-bit.
+  * As a result, we do not support Windows 7, 8, or 8.1.
+  * Developers can check the contents of the `.python-version` file
+      in the source (not distributed with the Windows installer) for the
+      currently used version.
+---
+Release 5.12.1
 ===
-Please see the [docs/Licenses](docs/Licenses/) directory for copies of any
-licenses for software we use with EDMarketConnector, either at runtime, or to
-produce the Windows executables and installer.
 
----
+This release fixes a handful of bugs reported with 5.12.0, notably a widely-reported bug with EDMC CAPI Authentication.
 
-* We now test against, and package with, Python 3.11.1, 32-bit.
+**Changes and Enhancements**
+* Fixed a typo in the prior release notes
 
-  **As a consequence of this we no longer support Windows 7.  
-  This is due to
-  [Python 3.10.x and later not supporting Windows 7](https://www.python.org/downloads/windows/).
-  The application (both EDMarketConnector.exe and EDMC.exe) will crash on
-  startup due to a missing DLL.**
+**Bug Fixes**
+* Fixed a bug where the EDMC System Profiler wouldn't load details properly
+* Reverted a number of usages of Pathlib back to os.path for further validation testing
+* Fixed a bug where EDMC would error out with a max() ValueError
+* Fixed an issue where the EDMC protocol wouldn't be processed properly via prototyping
 
-  As [Windows 8.1 is now End-Of-Life](https://learn.microsoft.com/en-us/lifecycle/faq/windows#windows-8-1)
-  we no longer explicitly support it, but for the time being it will likely
-  continue to work.  This is dependent on future Python releases not dropping
-  support for Windows 8.1 in a manner that prevents it working.  Any bug report
-  made against Windows 8.1 use may be ignored unless reproduced on a supported
-  OS.
+**Plugin Developers**
+* nb.Entry is deprecated, and is slated for removal in 6.0 or later. Please migrate to nb.EntryMenu
+* nb.ColoredButton is deprecated, and is slated for removal in 6.0 or later. Please migrate to tk.Button
+* Calling internal translations with `_()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to importing `translations` and calling `translations.translate` or `translations.tl` directly
+* `Translations` as the translate system singleton is deprecated, and is slated for removal in 6.0 or later. Please migrate to the `translations` singleton
+* `help_open_log_folder()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to open_folder()
+* `update_feed` is deprecated, and is slated for removal in 6.0 or later. Please migrate to `get_update_feed()`.
 
-  This should have no other impact on users or plugin developers, other
-  than the latter now being free to use features that were introduced since the
-  Python 3.7 series.
 
-  Developers can check the contents of the `.python-version` file
-  in the source (it's not distributed with the Windows installer) for the
-  currently used version in a given branch.
+Release 5.12.0
+===
 
----
+This release brings a number of performance enhancements and functionality updates requested by the community to EDMC.
+Notably, integration with Inara's SLEF notation, custom plugin directories, streamlined logging locations, and 
+performance enhancements are included.
+
+This release also fixes a few administrative issues regarding licenses to ensure compliance with included libraries.
+
+**Changes and Enhancements**
+* Added the ability to export a ship's loadout to Inara SLEF notation
+* Added the ability for EDMC to restart itself if required after settings changes
+* Added the ability to change the custom plugins directory to allow for multiple plugin profiles
+* Added Basic Type 8 Support
+* Updated the default logging directory from $TEMPDIR or %TEMP% and to the current app data directory
+* Updated a number of direct win32API calls to use proper prototyped library calls
+* Updated a number of translations
+* Updated a number of dependencies
+* Updated included and bundled licenses to comply with dependency requirements
+* Updated the game_running check to be more efficient on Windows to reduce program hangs
+* Minor logic enhancements
+* Retired most usages of os.path in favor of the preferred PathLib
+
+**Bug Fixes**
+* Fixed a bug that would result in Horizons and Odyssey flags not being passed to EDDN
+
+**Plugin Developers**
+* nb.Entry is deprecated, and is slated for removal in 6.0 or later. Please migrate to nb.EntryMenu
+* nb.ColoredButton is deprecated, and is slated for removal in 6.0 or later. Please migrate to tk.Button
+* Calling internal translations with `_()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to importing `translations` and calling `translations.translate` or `translations.tl` directly
+* `Translations` as the translate system singleton is deprecated, and is slated for removal in 6.0 or later. Please migrate to the `translations` singleton
+* `help_open_log_folder()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to open_folder()
+* `update_feed` is deprecated, and is slated for removal in 6.0 or later. Please migrate to `get_update_feed()`.
+
+
+Release 5.11.3
+===
+
+This release fixes a bug where an incomplete hand-over from ordereddict to dict types would cause a sender failure.
+
+**Changes and Enhancements**
+* Updated Translations
+
+**Bug Fixes**
+* Fixed a bug where two senders might fail due to improper data formats
+
+**Plugin Developers**
+* nb.Entry is deprecated, and is slated for removal in 6.0 or later. Please migrate to nb.EntryMenu
+* nb.ColoredButton is deprecated, and is slated for removal in 6.0 or later. Please migrate to tk.Button
+* Calling internal translations with `_()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to importing `translations` and calling `translations.translate` or `translations.tl` directly
+* `Translations` as the translate system singleton is deprecated, and is slated for removal in 6.0 or later. Please migrate to the `translations` singleton
+* `help_open_log_folder()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to open_folder()
+* `update_feed` is deprecated, and is slated for removal in 6.0 or later. Please migrate to `get_update_feed()`.
+* FDevID files (`commodity.csv` and `rare_commodity.csv`) have moved their preferred location to the app dir (same location as default Plugins folder). Please migrate to use `config.app_dir_path`.
+
+Release 5.11.2
+===
+
+This release fixes a bug where minimizing to the system tray could cause the program to not un-minimize.
+
+**Changes and Enhancements**
+* Updated Translations
+* Added a developer utility to help speed up changelog development
+
+**Bug Fixes**
+* Fixed a bug where minimizing to the system tray could cause the program to not un-minimize.
+
+**Plugin Developers**
+* nb.Entry is deprecated, and is slated for removal in 6.0 or later. Please migrate to nb.EntryMenu
+* nb.ColoredButton is deprecated, and is slated for removal in 6.0 or later. Please migrate to tk.Button
+* Calling internal translations with `_()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to importing `translations` and calling `translations.translate` or `translations.tl` directly
+* `Translations` as the translate system singleton is deprecated, and is slated for removal in 6.0 or later. Please migrate to the `translations` singleton
+* `help_open_log_folder()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to open_folder()
+* `update_feed` is deprecated, and is slated for removal in 6.0 or later. Please migrate to `get_update_feed()`.
+* FDevID files (`commodity.csv` and `rare_commodity.csv`) have moved their preferred location to the app dir (same location as default Plugins folder). Please migrate to use `config.app_dir_path`.
+
+Release 5.11.1
+===
+
+This release fixes a bug regarding FDevID files when running from Source in a non-writable location. Additionally,
+Deprecation Warnings are now more visible to aid in plugin development.
+
+**Changes and Enhancements**
+* Added a check on Git Pushes to check for updated translation strings for developers
+* Enabled deprecation warnings to pass to plugins and logs
+* Updated Dependencies
+* Replaced infi.systray with drop-in replacement simplesystray
+
+**Bug Fixes**
+* Fixed a bug that could result in the program not updating or writing FDevID files when running from source in a location where the running user can't write to
+
+**Plugin Developers**
+* nb.Entry is deprecated, and is slated for removal in 6.0 or later. Please migrate to nb.EntryMenu
+* nb.ColoredButton is deprecated, and is slated for removal in 6.0 or later. Please migrate to tk.Button
+* Calling internal translations with `_()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to importing `translations` and calling `translations.translate` or `translations.tl` directly
+* `Translations` as the translate system singleton is deprecated, and is slated for removal in 6.0 or later. Please migrate to the `translations` singleton
+* `help_open_log_folder()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to open_folder()
+* `update_feed` is deprecated, and is slated for removal in 6.0 or later. Please migrate to `get_update_feed()`.
+* FDevID files (`commodity.csv` and `rare_commodity.csv`) have moved their preferred location to the app dir (same location as default Plugins folder). Please migrate to use `config.app_dir_path`.
+
+
+Release 5.11.0
+===
+
+This release includes a number of new features and improvements, including a new Beta Update Track for testing future updates, enhanced context menus for text entry fields and UI elements, a revamp to the existing translation system and logging capabilities, and more. This release includes the Python Image Library (PIL) into our core bundle, adds a number of stability and configuration checks to the tool, and adds new schemas and configuration values to senders. 
+
+This release also includes a number of bug fixes, performance enhancements, and updates to various aspects of the code to enhance maintainability are included. Notably, MacOS support has been removed due to a lack of support for this OS in Elite, and a number of functions have been deprecated and will be removed in later versions. Plugin developers, take note!
+
+**Changes and Enhancements**
+* Established a Beta Update Track to allow users to assist in future update testing
+* Added a global context menu for text entry fields that includes cut, copy, and paste options
+* Added a context menu for Ship, System, and Station UI elements which allows opening the respective link in any of the available resource providers.
+* Added translation hooks to the update available status string
+* Added additional status logging when we're awaiting game log-in
+* Added the Python Image Library (PIL) to the core EDMC library bundle
+* Added respect for EDSM API limits to the default plugin
+* Added EDDN stationType and carrierDockingAccess schemas to the sent events
+* Added MaxJumpRange and CargoCapacity events to the Inara sender
+* Added a high-level critical error handler to gracefully terminate the program in the event of a catastrophic error
+* Added the ability to override the default language for a translation by adding the optional 'lang' parameter to the translate function for individual functions
+* Added an updated template and new security reporting guidance to the documentation
+* Added a new updater for the FDevID Files to keep the dependency up to date without requiring a new patch version push
+* Added a System Profiler Utility to assist with gathering system and environment information for bug report purposes
+* Added a new security policy for responsible disclosure of identified security issues
+* Adds Additional Error Processing to the System Profiler when launched from EDMC
+* Adds the ability to resize the Settings window to larger than the initial default size
+* Enabled security code scanning on the GitHub repository
+* Tweaked a few list length checks that could just be boolean to be bool
+* Updates the look and feel of the "Already Running" popup to reduce overhead and improve the look of the popup
+* Updated translations to latest versions, including a new language: Ukranian!
+* Updated documentation to reflect certain changes to the code
+* Updated the GitHub Bug Report template
+* Updated the GitHub Pull Request template
+* Updated internal workflows to more recent versions
+* Updated util_ships to avoid using Windows reserved file names as output
+* Converted all usages of the unnecessary OrderedDict to use the standard dict
+* Clarifies the hierarchy of parent classes for custom MyNotebook classes
+* Renamed the default translation function from `_()` to `tr.tl()`
+* Renamed the Translations base class to conform to Pythonic standards
+* Deprecated the `_Translations` class
+* Deprecated the `Translations` singleton in favor of `translations`
+* Unpinned several dependencies that were already dependencies of other dependencies to prevent dependency conflicts (say that 5 times fast)
+* Updated a few type hints to allow updates to more updated dependencies
+* Changed the translation function import to no longer rely on forcing it into Python's builtins
+* Handed over a few tk classes to their ttk equivalents for better styling
+* Reworked the Plugin system to no longer use the deprecated importlib.load_module()
+* Deprecated nb.Entry and nb.ColoredButton as they simply point toward other classes with no processing
+* Removed macOS support
+* Removed deprecated modules.p and ships.p files
+* Removed deprecated openurl() function
+
+**Bug Fixes**
+* Fixed a bug where certain types of exceptions from the Requests module wouldn't be handled properly regarding killswitches
+* Fixed a rare bug where source builds running on 64-bit Python could generate an OverflowError in the monitor system
+* Fixed a bug where EDMC would open directories in the webbrowser instead of the file explorer on Linux
+* Fixed a rare bug that could cause the EDSM plugin to crash due to missing configuration values
+
+**Plugin Developers**
+* nb.Entry is deprecated, and is slated for removal in 6.0 or later. Please migrate to nb.EntryMenu
+* nb.ColoredButton is deprecated, and is slated for removal in 6.0 or later. Please migrate to tk.Button
+* Calling internal translations with `_()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to importing `translations` and calling `translations.translate` or `translations.tl` directly
+* `Translations` as the translate system singleton is deprecated, and is slated for removal in 6.0 or later. Please migrate to the `translations` singleton
+* `help_open_log_folder()` is deprecated, and is slated for removal in 6.0 or later. Please migrate to open_folder()
+* `update_feed` is deprecated, and is slated for removal in 6.0 or later. Please migrate to `get_update_feed()`.
+* modules.p and ships.p are deprecated, and have been removed
+* The `openurl()` function in ttkHyperlinkLabel has been removed. Please migrate to `webbrowser.open()`
+
+
+Release 5.10.6
+===
+This release contains the data information for the new SCO modules added in Elite update 18.04. 
+This should represent full support for the new Python Mk II.
+
+We now sign our code! This does mean that built EXEs are now slightly modified on our developer's machines.
+For information on what this means, and opt-out options, please visit https://github.com/EDCD/EDMarketConnector/wiki/Code-Signing-and-EDMC
+
+**Changes and Enhancements**
+* Added new SCO Module Details
+* Reverted a change from the prior release due to breaking some consumers. 
+**Plugin Developers**
+* modules.p and ships.p are deprecated, and slated for removal in 5.11+!
+* The `openurl()` function in ttkHyperlinkLabel has been deprecated,
+and slated for removal in 5.11+! Please migrate to `webbrowser.open()`.
+
+**Plugin Developers**
+* modules.p and ships.p are deprecated, and slated for removal in 5.11+!
+* The `openurl()` function in ttkHyperlinkLabel has been deprecated,
+and slated for removal in 5.11+! Please migrate to `webbrowser.open()`.
+
+Release 5.10.5
+===
+This release contains a fix for a bug that could crash EDMC's console versions when reading outfitting information
+from the new SCO Frame Shift Drive modules. 
+
+Please note that this does not offer full support for the new SCO modules or the Python Mk II. More support will
+be added in a future update.
+
+We now sign our code! This does mean that built EXEs are now slightly modified on our developer's machines.
+For information on what this means, and opt-out options, please visit https://github.com/EDCD/EDMarketConnector/wiki/Code-Signing-and-EDMC
+
+**Changes and Enhancements**
+* Updated Translations
+* Added limited data regarding the Python Mk II
+* Added a few Coriolis module information entries
+
+**Bug Fixes**
+* Fixed a bug that could cause the new SCO modules to display improper ratings or sizes
+* Fixed a bug where the new SCO modules would display as a normal Frame Shift Drive
+* Fixed a bug which could crash EDMC if the exact details of a Frame Shift Drive were unknown
+
+**Plugin Developers**
+* modules.p and ships.p are deprecated, and slated for removal in 5.11+!
+* The `openurl()` function in ttkHyperlinkLabel has been deprecated,
+and slated for removal in 5.11+! Please migrate to `webbrowser.open()`.
+
+Release 5.10.4
+===
+This release contains updated dependencies, modules files, translations, and adds two new EDDN schemas. It also 
+adds Turkish translations to EDMC!
+
+We now sign our code! This does mean that built EXEs are now slightly modified on our developer's machines.
+For information on what this means, and opt-out options, please visit https://github.com/EDCD/EDMarketConnector/wiki/Code-Signing-and-EDMC
+
+**Changes and Enhancements**
+* Adds Turkish Translations to EDMC
+* Adds DockingDenied and DockingGranted EDDN Schemas
+* Updated FDevIDs Dependency
+* Updated Translations
+* Updated modules files to process several missing module types used for bug squishing or going fast
+* Updated Python Dependencies
+
+**Bug Fixes**
+* Fixed a bug on older Python versions which couldn't import updated type annotations
+
+**Plugin Developers**
+* modules.p and ships.p are deprecated, and slated for removal in 5.11+!
+* The `openurl()` function in ttkHyperlinkLabel has been deprecated,
+and slated for removal in 5.11+! Please migrate to `webbrowser.open()`.
+
+Release 5.10.3
+===
+This release contains a bugfix for the shipyard outfitting parsing system and an update to the French translations. 
+
+We now sign our code! This does mean that built EXEs are now slightly modified on our developer's machines.
+For information on what this means, and opt-out options, please visit https://github.com/EDCD/EDMarketConnector/wiki/Code-Signing-and-EDMC
+
+**Changes and Enhancements**
+* Updated French Translations
+
+**Bug Fixes**
+* Fixed a bug that crashed the outfitting system when encountering armor. (Thanks TCE team for identifying this one!)
+
+**Plugin Developers**
+* modules.p and ships.p are deprecated, and slated
+for removal in the next major release! Please look for that change coming soon. 
+* Note to plugin developers: The `openurl()` function in ttkHyperlinkLabel has been deprecated,
+and slated for removal in the next major release! Please migrate to `webbrowser.open()`.
+
+Release 5.10.2
+===
+This release contains updated dependencies, some bug fixes, a few minor enhancements to some supporting files, 
+and some resorted resources as well as a new image for some of the built EXEs.
+
+We now sign our code! This does mean that built EXEs are now slightly modified on our developer's machines.
+For information on what this means, and opt-out options, please visit https://github.com/EDCD/EDMarketConnector/wiki/Code-Signing-and-EDMC
+
+**Changes and Enhancements**
+* Added additional logging to the Python build string in the case of missing files
+* Added a new icon to EDMC's Command-Line EXE
+* Added additional logging to the build system
+* Updated several dependencies
+* Updated FDEV IDs
+* Updated relevant copyright dates
+* Updated automatic build script to support code signing workflow
+* Updated translations to the latest versions
+* Moved a few unused files to the resources folder. These files have no references in the code
+
+**Bug Fixes**
+* Fixed a bug that could cause EDMC to handle SIGINT signals improperly
+* Fixed a bug that could result in URL providers to be set to invalid values
+* Fixed a bug that could result in Coriolis URL providers to revert back to "Auto" on language translations
+* Fixed a bug where Inara didn't understand being blown up by a Thargoid, and blew itself up instead
+* Fixed a printing issue for the localization system for unused strings
+
+**Removed Files**
+* Removed two unused manifest and MacOS icon files which are no longer in use.
+
+**Known Issues**
+* Some users of TCE have reported issues with newer versions of EDMC with TCE. 
+  * We have been unable to replicate this issue. If you are able to assist, please 
+  add your information here: https://github.com/EDCD/EDMarketConnector/issues/2176
+
+**Plugin Developers**
+* modules.p and ships.p are deprecated, and slated
+for removal in the next major release! Please look for that change coming soon. 
+* Note to plugin developers: The `openurl()` function in ttkHyperlinkLabel has been deprecated,
+and slated for removal in the next major release! Please migrate to `webbrowser.open()`.
+
+Release 5.10.1
+===
+This release contains a number of bugfixes, minor performance enhancements,
+workflow and dependency updates, and a function deprecation. 
+
+Note to plugin developers: modules.p and ships.p are deprecated, and slated
+for removal in the next major release! Please look for that change coming soon. 
+
+Note to plugin developers: The `openurl()` function in ttkHyperlinkLabel has been deprecated,
+and slated for removal in the next major release! Please migrate to `webbrowser.open()`.
+
+**Changes and Enhancements**
+* Deprecated `openurl()`. Please migrate to `webbrowser.open()`
+* Updated a number of list comparisons to use more efficient tuple comparisons
+* Updated a few type hints
+* Updated a few binary comparitors to be more efficient
+* Moved `resources.json` and `modules.json` back to the top level for all users
+* Updated several dependencies
+* Updated Python version to 3.11.7
+
+**Bug Fixes**
+* Fixed an issue where resources files could be in different locations for different users.
+  * These files are now in the same location (top level) for all users on all distributions.
+* Fixed an issue where CMDRs without the Git application installed would crash on start if running from Source.
+  * Thanks to the Flatpak team for pointing this one out!
+* Fixed a bug where CMDRs running from source would have their git hash version displayed as UNKNOWN.
+  * We're now more failure tolerant and use the bundled .gitversion if no true git hash is provided.
+* Fixed a bug where starting two copies of EDMC with a valid install would not generate a duplicate warning.
+
+Release 5.10.0
+===
+This release contains a number of under-the-hood changes to EDMC designed to improve performance, code
+maintainability, and stability of the EDMC application, while providing new features and quality-of-life fixes.
+
+Note to plugin developers: modules.p and ships.p are deprecated, and slated
+for removal in the next major release! Please look for that change coming soon. 
+
+**Changes and Enhancements**
+* Added new `modules.json` and `ships.json` files to improve security and readability
+* Added a core Spansh URL provider plugin
+* Added a new auth response page for successful FDEV authentication
+* Added a new Open Log Folder option to the Help menu
+* Added a new `--start_min` command flag to force the application to start minimized
+* Added a new pop-up if plugins fail to load or are not supported
+* Updated commodities and module files to the latest versions
+* Updated core EDMC and core Plugin menus to a standardized layout
+* Updates the Inara URL formats to the new endpoints
+
+**Bug Fixes**
+* Fixed an issue where indentation of text strings in certain settings windows under various languages 
+would be unevenly indented
+* Fixed an issue where the Plugins Folder label in the Plugins settings window would cut off the 
+selection box for the plugin storage location
+
+**Code Clean Up**
+* Added future annotation imports to help with code compatibility
+* Added a few conditional checks on input processing
+* Simplified some RegEx expressions, complex functions, logic flows, and Import statements
+* Simplified the WinSparkle GitHub Build Action
+* Began to change single-character variables to more descriptive names
+* Moved a number of global variables into their requisite classes 
+* Updated a number of dependencies to the latest versions
+* Updated GitHub Actions to the latest versions
+* Updated a number of resource-allocating functions to use more efficient closing logic
+* Updated some calls to arrays to be more efficient
+* Removed a number of old-style typing hints in favor of PEP 585 style hints
+* Removed a number of redundant `if - return - else` or `raise - else` statements for code readability
+* Removed some default parameter assignments
+* Removed some obsolete calls to Object
+
+**Plugin Developers**
+* `modules.p` and `ships.p` have been deprecated, and will be removed in 6.0. 
+If you are using these files, please update to use the new `modules.json` and `ships.json` files instead. 
+* A new method of standardizing the paddings used in settings panels has been applied to the core settings panels.
+We strongly encourage you to follow these style hints! A proper guide will be added to the wiki.
+
+
 Release 5.9.5
 ===
 This release fixes an uncommon problem with the uninstaller logic if upgrading from a version prior
@@ -61,7 +432,7 @@ Known Issues
 
 Release 5.9.3
 ===
-This release is identical to 5.9.3, except reverts a bad change. 
+This release is identical to 5.9.2, except reverts a bad change. 
 
 - REVERTS Deprecated load_module() is now retired (#1462)
 
@@ -73,7 +444,7 @@ Windows registry to allow for protocol handling. All users are **strongly** enco
 - Fixes a critical bug with the installer on new installs not creating registry keys (#2046)
 - Re-enables automatic submodule updates (#1443)
 - Help -> About Version String can now be copied to clipboard (#1936)
-- EDSM Task Manager Printout now is less useless (#2045)
+- EDMC Task Manager Printout now is less useless (#2045)
 - Deprecated load_module() is now retired (#1462)
 - API Keys are masked in Settings (#2047)
 - Installer will now refuse to install on Win7 and Earlier (#1122)

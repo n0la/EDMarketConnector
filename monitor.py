@@ -1,7 +1,11 @@
-"""Monitor for new Journal files and contents of latest."""
-#                                                                             v [sic]
-# spell-checker: words onfoot unforseen relog fsdjump suitloadoutid slotid suitid loadoutid fauto Intimidator
-# spell-checker: words joinacrew quitacrew sellshiponrebuy newbal navroute npccrewpaidwage sauto
+"""
+monitor.py - Monitor for new Journal files and contents of latest.
+
+Copyright (c) EDCD, All Rights Reserved
+Licensed under the GNU General Public License.
+See LICENSE file.
+"""
+from __future__ import annotations
 
 import json
 import pathlib
@@ -10,78 +14,50 @@ import re
 import sys
 import threading
 from calendar import timegm
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from os import SEEK_END, SEEK_SET, listdir
 from os.path import basename, expanduser, getctime, isdir, join
 from time import gmtime, localtime, mktime, sleep, strftime, strptime, time
-from typing import TYPE_CHECKING, Any, BinaryIO, MutableMapping, Tuple
+from typing import TYPE_CHECKING, Any, BinaryIO, MutableMapping
+import psutil
+import semantic_version
+import util_ships
+from config import config, appname, appversion
+from edmc_data import edmc_suit_shortnames, edmc_suit_symbol_localised, ship_name_map
+from EDMCLogging import get_main_logger
+from edshipyard import ships
 
 if TYPE_CHECKING:
     import tkinter
 
-import semantic_version
-
-import util_ships
-from config import config
-from edmc_data import edmc_suit_shortnames, edmc_suit_symbol_localised
-from EDMCLogging import get_main_logger
-
-# spell-checker: words navroute
 
 logger = get_main_logger()
 STARTUP = 'journal.startup'
 MAX_NAVROUTE_DISCREPANCY = 5  # Timestamp difference in seconds
 MAX_FCMATERIALS_DISCREPANCY = 5  # Timestamp difference in seconds
 
-if TYPE_CHECKING:
-    def _(x: str) -> str:
-        return x
-
-if sys.platform == 'darwin':
-    from fcntl import fcntl
-
-    from AppKit import NSWorkspace
-    from watchdog.events import FileSystemEventHandler
+if sys.platform == 'win32':
+    from watchdog.events import FileSystemEventHandler, FileSystemEvent
     from watchdog.observers import Observer
     from watchdog.observers.api import BaseObserver
-    F_GLOBAL_NOCACHE = 55
-
-elif sys.platform == 'win32':
-    import ctypes
-    from ctypes.wintypes import BOOL, HWND, LPARAM, LPWSTR
-
-    from watchdog.events import FileCreatedEvent, FileSystemEventHandler
-    from watchdog.observers import Observer
-    from watchdog.observers.api import BaseObserver
-
-    EnumWindows = ctypes.windll.user32.EnumWindows
-    EnumWindowsProc = ctypes.WINFUNCTYPE(BOOL, HWND, LPARAM)
-
-    CloseHandle = ctypes.windll.kernel32.CloseHandle
-
-    GetWindowText = ctypes.windll.user32.GetWindowTextW
-    GetWindowText.argtypes = [HWND, LPWSTR, ctypes.c_int]
-    GetWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
-
-    GetProcessHandleFromHwnd = ctypes.windll.oleacc.GetProcessHandleFromHwnd
 
 else:
     # Linux's inotify doesn't work over CIFS or NFS, so poll
     FileSystemEventHandler = object  # dummy
     if TYPE_CHECKING:
         # this isn't ever used, but this will make type checking happy
-        from watchdog.events import FileCreatedEvent
+        from watchdog.events import FileSystemEvent
         from watchdog.observers import Observer
         from watchdog.observers.api import BaseObserver
 
 
 # Journal handler
-class EDLogs(FileSystemEventHandler):  # type: ignore # See below
+class EDLogs(FileSystemEventHandler):
     """Monitoring of Journal files."""
 
     # Magic with FileSystemEventHandler can confuse type checkers when they do not have access to every import
-
-    _POLL = 1		# Polling is cheap, so do it often
+    _POLL = 1		# Polling while running is cheap, so do it often
+    _INACTIVE_POLL = 10		# Polling while not running isn't as cheap, so do it less often
     _RE_CANONICALISE = re.compile(r'\$(.+)_name;')
     _RE_CATEGORY = re.compile(r'\$MICRORESOURCE_CATEGORY_(.+);')
     _RE_LOGFILE = re.compile(r'^Journal(Alpha|Beta)?\.[0-9]{2,4}(-)?[0-9]{2}(-)?[0-9]{2}(T)?[0-9]{2}[0-9]{2}[0-9]{2}'
@@ -111,6 +87,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
         self.catching_up = False
 
         self.game_was_running = False  # For generation of the "ShutDown" event
+        self.running_process = None
 
         # Context for journal handling
         self.version: str | None = None
@@ -120,6 +97,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
         self.group: str | None = None
         self.cmdr: str | None = None
         self.started: int | None = None  # Timestamp of the LoadGame event
+        self.slef: str | None = None
 
         self._navroute_retries_remaining = 0
         self._last_navroute_journal_timestamp: float | None = None
@@ -207,7 +185,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
         :return: bool - False if we couldn't access/find latest Journal file.
         """
         logger.debug('Begin...')
-        self.root = root  # type: ignore
+        self.root = root
         journal_dir = config.get_str('journaldir')
 
         if journal_dir == '' or journal_dir is None:
@@ -357,7 +335,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
         """
         return bool(self.thread and self.thread.is_alive())
 
-    def on_created(self, event: 'FileCreatedEvent') -> None:
+    def on_created(self, event: 'FileSystemEvent') -> None:
         """Watchdog callback when, e.g. client (re)started."""
         if not event.is_directory and self._RE_LOGFILE.search(basename(event.src_path)):
 
@@ -382,8 +360,6 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
         logfile = self.logfile
         if logfile:
             loghandle: BinaryIO = open(logfile, 'rb', 0)  # unbuffered
-            if sys.platform == 'darwin':
-                fcntl(loghandle, F_GLOBAL_NOCACHE, -1)  # required to avoid corruption on macOS over SMB
 
             self.catching_up = True
             for line in loghandle:
@@ -450,7 +426,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                     new_journal_file = None
 
             if logfile:
-                loghandle.seek(0, SEEK_END)		  # required to make macOS notice log change over SMB
+                loghandle.seek(0, SEEK_END)  # required for macOS to notice log change over SMB. TODO: Do we need this?
                 loghandle.seek(log_pos, SEEK_SET)  # reset EOF flag # TODO: log_pos reported as possibly unbound
                 for line in loghandle:
                     # Paranoia check to see if we're shutting down
@@ -483,12 +459,12 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
                 if logfile:
                     loghandle = open(logfile, 'rb', 0)  # unbuffered
-                    if sys.platform == 'darwin':
-                        fcntl(loghandle, F_GLOBAL_NOCACHE, -1)  # required to avoid corruption on macOS over SMB
-
                     log_pos = 0
 
-            sleep(self._POLL)
+            if self.game_was_running:
+                sleep(self._POLL)
+            else:
+                sleep(self._INACTIVE_POLL)
 
             # Check whether we're still supposed to be running
             if threading.current_thread() != self.thread:
@@ -514,8 +490,6 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
             else:
                 self.game_was_running = self.game_running()
-
-        logger.debug('Done.')
 
     def synthesize_startup_event(self) -> dict[str, Any]:
         """
@@ -569,8 +543,8 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         try:
             # Preserve property order because why not?
-            entry: MutableMapping[str, Any] = json.loads(line, object_pairs_hook=OrderedDict)
-            entry['timestamp']  # we expect this to exist # TODO: replace with assert? or an if key in check
+            entry: MutableMapping[str, Any] = json.loads(line)
+            assert 'timestamp' in entry, "Timestamp does not exist in the entry"
 
             self.__navroute_retry()
 
@@ -719,6 +693,34 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                         module.pop('AmmoInHopper')
 
                     self.state['Modules'][module['Slot']] = module
+                # SLEF
+                initial_dict: dict[str, dict[str, Any]] = {
+                    "header": {"appName": appname, "appVersion": str(appversion())}
+                }
+                data_dict = {}
+                for module in entry['Modules']:
+                    if module.get('Slot') == 'FuelTank':
+                        cap = module['Item'].split('size')
+                        cap = cap[1].split('_')
+                        cap = 2 ** int(cap[0])
+                        ship = ship_name_map[entry["Ship"]]
+                        fuel = {'Main': cap, 'Reserve': ships[ship]['reserveFuelCapacity']}
+                        data_dict.update({"FuelCapacity": fuel})
+                data_dict.update({
+                    'Ship': entry["Ship"],
+                    'ShipName': entry['ShipName'],
+                    'ShipIdent': entry['ShipIdent'],
+                    'HullValue': entry['HullValue'],
+                    'ModulesValue': entry['ModulesValue'],
+                    'Rebuy': entry['Rebuy'],
+                    'MaxJumpRange': entry['MaxJumpRange'],
+                    'UnladenMass': entry['UnladenMass'],
+                    'CargoCapacity': entry['CargoCapacity'],
+                    'Modules': entry['Modules'],
+                })
+                initial_dict.update({'data': data_dict})
+                output = json.dumps(initial_dict, indent=4)
+                self.slef = str(f"[{output}]")
 
             elif event_type == 'modulebuy':
                 self.state['Modules'][entry['Slot']] = {
@@ -933,7 +935,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                 ###############################################################
                 if 'StarPos' in entry:
                     # Plugins need this as well, so copy in state
-                    self.state['StarPos'] = tuple(entry['StarPos'])  # type: ignore
+                    self.state['StarPos'] = tuple(entry['StarPos'])
 
                 else:
                     logger.warning(f"'{event_type}' event without 'StarPos' !!!:\n{entry}\n")
@@ -1044,7 +1046,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                         rank[k] = (rank[k][0], min(v, 100))
 
             elif event_type in ('reputation', 'statistics'):
-                payload = OrderedDict(entry)
+                payload = dict(entry)
                 payload.pop('event')
                 payload.pop('timestamp')
                 # NB: We need the original casing for these keys
@@ -1075,7 +1077,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                 # From 3.3 full Cargo event (after the first one) is written to a separate file
                 if 'Inventory' not in entry:
                     with open(join(self.currentdir, 'Cargo.json'), 'rb') as h:  # type: ignore
-                        entry = json.load(h, object_pairs_hook=OrderedDict)  # Preserve property order because why not?
+                        entry = json.load(h)
                         self.state['CargoJSON'] = entry
 
                 clean = self.coalesce_cargo(entry['Inventory'])
@@ -1109,8 +1111,8 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                 while attempts < shiplocker_max_attempts:
                     attempts += 1
                     try:
-                        with open(shiplocker_filename, 'rb') as h:  # type: ignore
-                            entry = json.load(h, object_pairs_hook=OrderedDict)
+                        with open(shiplocker_filename, 'rb') as h:
+                            entry = json.load(h)
                             self.state['ShipLockerJSON'] = entry
                             break
 
@@ -1551,7 +1553,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                         entry = json.load(mf)
 
                     except json.JSONDecodeError:
-                        logger.exception('Failed decoding ModulesInfo.json', exc_info=True)
+                        logger.exception('Failed decoding ModulesInfo.json')
 
                     else:
                         self.state['ModuleInfo'] = entry
@@ -1812,7 +1814,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
                 self.state['Credits'] -= entry.get('Price', 0)
 
             elif event_type == 'carrierbanktransfer':
-                if (newbal := entry.get('PlayerBalance')):
+                if newbal := entry.get('PlayerBalance'):
                     self.state['Credits'] = newbal
 
             elif event_type == 'carrierdecommission':
@@ -1911,7 +1913,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         return name
 
-    def suitloadout_store_from_event(self, entry) -> Tuple[int, int]:
+    def suitloadout_store_from_event(self, entry) -> tuple[int, int]:
         """
         Store Suit and SuitLoadout data from a journal event.
 
@@ -1990,64 +1992,64 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
     # TODO: *This* will need refactoring and a proper validation infrastructure
     #       designed for this in the future.  This is a bandaid for a known issue.
-    def event_valid_engineerprogress(self, entry) -> bool:  # noqa: CCR001 C901
+    def event_valid_engineerprogress(self, entry) -> bool:  # noqa: CCR001
         """
         Check an `EngineerProgress` Journal event for validity.
 
         :param entry: Journal event dict
         :return: True if passes validation, else False.
         """
-        # The event should have at least one of these
-        if 'Engineers' not in entry and 'Progress' not in entry:
+        engineers_present = 'Engineers' in entry
+        progress_present = 'Progress' in entry
+
+        if not (engineers_present or progress_present):
             logger.warning(f"EngineerProgress has neither 'Engineers' nor 'Progress': {entry=}")
             return False
 
-        # But not both of them
-        if 'Engineers' in entry and 'Progress' in entry:
+        if engineers_present and progress_present:
             logger.warning(f"EngineerProgress has BOTH 'Engineers' and 'Progress': {entry=}")
             return False
 
-        if 'Engineers' in entry:
+        if engineers_present:
+            engineers = entry['Engineers']
             # 'Engineers' version should have a list as value
-            if not isinstance(entry['Engineers'], list):
+            if not isinstance(engineers, list):
                 logger.warning(f"EngineerProgress 'Engineers' is not a list: {entry=}")
                 return False
 
             # It should have at least one entry?  This might still be valid ?
-            if len(entry['Engineers']) < 1:
+            if len(engineers) < 1:
                 logger.warning(f"EngineerProgress 'Engineers' list is empty ?: {entry=}")
                 # TODO: As this might be valid, we might want to only log
                 return False
 
             # And that list should have all of these keys
-            for e in entry['Engineers']:
-                for f in ('Engineer', 'EngineerID', 'Rank', 'Progress', 'RankProgress'):
-                    if f not in e:
-                        # For some Progress there's no Rank/RankProgress yet
-                        if f in ('Rank', 'RankProgress'):
-                            if (progress := e.get('Progress', None)) is not None:
-                                if progress in ('Invited', 'Known'):
-                                    continue
+            # For some Progress there's no Rank/RankProgress yet
+            required_keys = ('Engineer', 'EngineerID', 'Rank', 'Progress', 'RankProgress')
+            for e in engineers:
+                missing_keys = [key for key in required_keys if key not in e]
+                if any(key in ('Rank', 'RankProgress') and e.get('Progress') in ('Invited', 'Known') for key in
+                       missing_keys):
+                    continue
 
-                        logger.warning(f"Engineer entry without '{f}' key: {e=} in {entry=}")
-                        return False
+                if missing_keys:
+                    logger.warning(f"Engineer entry without '{missing_keys[0]}' key: {e=} in {entry=}")
+                    return False
 
-        if 'Progress' in entry:
+        if progress_present:
             # Progress is only a single Engineer, so it's not an array
             # { "timestamp":"2021-05-24T17:57:52Z",
             #   "event":"EngineerProgress",
             #   "Engineer":"Felicity Farseer",
             #   "EngineerID":300100,
             #   "Progress":"Invited" }
-            for f in ('Engineer', 'EngineerID', 'Rank', 'Progress', 'RankProgress'):
-                if f not in entry:
-                    # For some Progress there's no Rank/RankProgress yet
-                    if f in ('Rank', 'RankProgress'):
-                        if (progress := entry.get('Progress', None)) is not None:
-                            if progress in ('Invited', 'Known'):
-                                continue
-
-                    logger.warning(f"Progress event without '{f}' key: {entry=}")
+            # For some Progress there's no Rank/RankProgress yet
+            required_keys = ('Engineer', 'EngineerID', 'Rank', 'Progress', 'RankProgress')
+            missing_keys = [key for key in required_keys if key not in entry]
+            if any(key in ('Rank', 'RankProgress') and entry.get('Progress') in ('Invited', 'Known') for key in
+                   missing_keys):
+                if missing_keys:
+                    logger.warning(f"Progress event without '{missing_keys[0]}' key: {entry=}")
                     return False
 
         return True
@@ -2138,41 +2140,33 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         return entry
 
-    def game_running(self) -> bool:  # noqa: CCR001
+    def game_running(self) -> bool:
         """
         Determine if the game is currently running.
 
-        TODO: Implement on Linux
-
         :return: bool - True if the game is running.
         """
-        if sys.platform == 'darwin':
-            for app in NSWorkspace.sharedWorkspace().runningApplications():
-                if app.bundleIdentifier() == 'uk.co.frontier.EliteDangerous':
-                    return True
-
-        elif sys.platform == 'win32':
-            def WindowTitle(h):  # noqa: N802 # type: ignore
-                if h:
-                    length = GetWindowTextLength(h) + 1
-                    buf = ctypes.create_unicode_buffer(length)
-                    if GetWindowText(h, buf, length):
-                        return buf.value
-                return None
-
-            def callback(hWnd, lParam):  # noqa: N803
-                name = WindowTitle(hWnd)
-                if name and name.startswith('Elite - Dangerous'):
-                    handle = GetProcessHandleFromHwnd(hWnd)
-                    if handle:  # If GetProcessHandleFromHwnd succeeds then the app is already running as this user
-                        CloseHandle(handle)
-                        return False  # stop enumeration
-
-                return True
-
-            return not EnumWindows(EnumWindowsProc(callback), 0)
-
-        return False
+        if self.running_process:
+            p = self.running_process
+            try:
+                with p.oneshot():
+                    if p.status() not in [psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING]:
+                        raise psutil.NoSuchProcess
+            except psutil.NoSuchProcess:
+                # Process likely expired
+                self.running_process = None
+        if not self.running_process:
+            try:
+                edmc_process = psutil.Process()
+                edmc_user = edmc_process.username()
+                for proc in psutil.process_iter(['name', 'username']):
+                    if 'EliteDangerous' in proc.info['name'] and proc.info['username'] == edmc_user:
+                        self.running_process = proc
+                        return True
+            except psutil.NoSuchProcess:
+                pass
+            return False
+        return bool(self.running_process)
 
     def ship(self, timestamped=True) -> MutableMapping[str, Any] | None:
         """
@@ -2191,7 +2185,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
             'PowerDistributor', 'Radar', 'FuelTank'
         )
 
-        d: MutableMapping[str, Any] = OrderedDict()
+        d: MutableMapping[str, Any] = {}
         if timestamped:
             d['timestamp'] = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
 
@@ -2261,18 +2255,18 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
             return
 
         ship = util_ships.ship_file_name(self.state['ShipName'], self.state['ShipType'])
-        regexp = re.compile(re.escape(ship) + r'\.\d{4}\-\d\d\-\d\dT\d\d\.\d\d\.\d\d\.txt')
-        oldfiles = sorted((x for x in listdir(config.get_str('outdir')) if regexp.match(x)))  # type: ignore
+        regexp = re.compile(re.escape(ship) + r'\.\d{4}-\d\d-\d\dT\d\d\.\d\d\.\d\d\.txt')
+        oldfiles = sorted((x for x in listdir(config.get_str('outdir')) if regexp.match(x)))
         if oldfiles:
             try:
-                with open(join(config.get_str('outdir'), oldfiles[-1]), 'r', encoding='utf-8') as h:  # type: ignore
+                with open(join(config.get_str('outdir'), oldfiles[-1]), encoding='utf-8') as h:
                     if h.read() == string:
                         return  # same as last time - don't write
 
             except UnicodeError:
                 logger.exception("UnicodeError reading old ship loadout with utf-8 encoding, trying without...")
                 try:
-                    with open(join(config.get_str('outdir'), oldfiles[-1]), 'r') as h:  # type: ignore
+                    with open(join(config.get_str('outdir'), oldfiles[-1])) as h:
                         if h.read() == string:
                             return  # same as last time - don't write
 
@@ -2291,9 +2285,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         # Write
         ts = strftime('%Y-%m-%dT%H.%M.%S', localtime(time()))
-        filename = join(  # type: ignore
-            config.get_str('outdir'), f'{ship}.{ts}.txt'
-        )
+        filename = join(config.get_str('outdir'), f'{ship}.{ts}.txt')
 
         try:
             with open(filename, 'wt', encoding='utf-8') as h:
@@ -2380,7 +2372,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         try:
 
-            with open(join(self.currentdir, 'NavRoute.json'), 'r') as f:
+            with open(join(self.currentdir, 'NavRoute.json')) as f:
                 raw = f.read()
 
         except Exception as e:
@@ -2391,7 +2383,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
             data = json.loads(raw)
 
         except json.JSONDecodeError:
-            logger.exception('Failed to decode NavRoute.json', exc_info=True)
+            logger.exception('Failed to decode NavRoute.json')
             return None
 
         if 'timestamp' not in data:  # quick sanity check
@@ -2406,7 +2398,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
 
         try:
 
-            with open(join(self.currentdir, 'FCMaterials.json'), 'r') as f:
+            with open(join(self.currentdir, 'FCMaterials.json')) as f:
                 raw = f.read()
 
         except Exception as e:
@@ -2417,7 +2409,7 @@ class EDLogs(FileSystemEventHandler):  # type: ignore # See below
             data = json.loads(raw)
 
         except json.JSONDecodeError:
-            logger.exception('Failed to decode FCMaterials.json', exc_info=True)
+            logger.exception('Failed to decode FCMaterials.json')
             return None
 
         if 'timestamp' not in data:  # quick sanity check

@@ -1,3 +1,11 @@
+/* edsm.py:Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:316; */
+"Send flight log and CMDR status to EDSM" = "Sende Fluglog und CMDR-Status an EDSM";
+
+/* prefs.py:Label on button used to open a filesystem folder; In files: prefs.py:706; */
+"Open Log Folder" = "Öffne Log Ordner";
+
+/* inara.py:Text Inara Show API key; In files: inara.py:305; */
+"Show API Key" = "Zeige API Schlüssel";
 /* Language name */
 "!Language" = "Deutsch";
 
@@ -27,6 +35,12 @@
 
 /* companion.py: Failed to get Access Token from Frontier Auth service; In files: companion.py:508; */
 "Error: unable to get token" = "Fehler: konnte Token nicht erhalten";
+
+/* EDMarketConnector.py: EDMC Critical Error Notification; */
+"EDMC encountered a critical error, and cannot recover. EDMC is shutting down for its own protection!" = "EDMC ist in einen unwiederbringlichen kritischen Fehler gelaufen. EDMC fährt zum Selbstschutz herunter!";
+
+/* EDMarketConnector.py: EDMC Critical Error Details; */
+"Here's what EDMC Detected:\r\n\r\n{ERR}\r\n\r\nDo you want to file a Bug Report on GitHub?" = "Das hat EDMC erkannt:\n\n{ERR}\n\nMöchtest Du einen Bug Report auf GitHub einreichen?";
 
 /* companion.py: Frontier CAPI returned 418, meaning down for maintenance; In files: companion.py:844; */
 "Frontier CAPI down for maintenance" = "Frontier CAPI offline wegen Wartung";
@@ -70,12 +84,6 @@
 /* EDMarketConnector.py: 'Edit' menu title on OSX; EDMarketConnector.py: 'Edit' menu title; In files: EDMarketConnector.py:922; EDMarketConnector.py:940; EDMarketConnector.py:943; */
 "Edit" = "Bearbeiten";
 
-/* EDMarketConnector.py: 'View' menu title on OSX; In files: EDMarketConnector.py:923; */
-"View" = "Ansicht";
-
-/* EDMarketConnector.py: 'Window' menu title on OSX; In files: EDMarketConnector.py:924; */
-"Window" = "Fenster";
-
 /* EDMarketConnector.py: Help' menu title on OSX; EDMarketConnector.py: 'Help' menu title; In files: EDMarketConnector.py:925; EDMarketConnector.py:941; EDMarketConnector.py:944; */
 "Help" = "Hilfe";
 
@@ -84,6 +92,9 @@
 
 /* EDMarketConnector.py: Help > Check for Updates...; In files: EDMarketConnector.py:930; EDMarketConnector.py:958; */
 "Check for Updates..." = "Auf Aktualisierungen überprüfen...";
+
+/* EDMarketConnector.py: Help > Open System Profiler; In files: EDMarketConnector.py:888; */
+"Open System Profiler" = "Öffne System Profiler";
 
 /* EDMarketConnector.py: File > Save Raw Data...; In files: EDMarketConnector.py:931; EDMarketConnector.py:948; */
 "Save Raw Data..." = "Speichere Originaldaten...";
@@ -114,6 +125,15 @@
 
 /* EDMarketConnector.py: Label for 'Copy' as in 'Copy and Paste'; ttkHyperlinkLabel.py: Label for 'Copy' as in 'Copy and Paste'; In files: EDMarketConnector.py:962; ttkHyperlinkLabel.py:53; */
 "Copy" = "Kopieren";
+
+/* myNotebook.py: Label for 'Cut' as in 'Cut and Paste'; */
+"Cut" = "Ausschneiden";
+
+/* myNotebook.py: Label for 'Paste' as in 'Copy and Paste'; */
+"Paste" = "Einfügen";
+
+/* myNotebook.py: Label for 'Select All'; */
+"Select All" = "Alles auswählen";
 
 /* EDMarketConnector.py: CAPI auth aborted because of killswitch; EDMarketConnector.py: CAPI auth query aborted because of killswitch; In files: EDMarketConnector.py:973; EDMarketConnector.py:1067; */
 "CAPI auth disabled by killswitch" = "CAPI auth durch Killswitch deaktiviert";
@@ -157,11 +177,11 @@
 /* EDMarketConnector.py: CAPI fleetcarrier query aborted because of killswitch; In files: EDMarketConnector.py:1157; */
 "CAPI fleetcarrier disabled by killswitch" = "CAPI Fleet Carrier durch Killswitch deaktiviert";
 
-/* EDMarketConnector.py: No data was returned for the fleetcarrier from the Frontier CAPI; In files: EDMarketConnector.py:1219; */
-"CAPI: No fleetcarrier data returned" = "CAPI: Keine Fleet Carrier-Daten erhalten";
+/* EDMarketConnector.py: No data was returned for the Fleet Carrier from the Frontier CAPI; In files: EDMarketConnector.py:1219; */
+"CAPI: No Fleet Carrier data returned" = "CAPI: Keine Carrier-Daten erhalten";
 
-/* EDMarketConnector.py: We didn't have the fleetcarrier callsign when we should have; In files: EDMarketConnector.py:1223; */
-"CAPI: Fleetcarrier data incomplete" = "CAPI: Fleet Carrier-Daten unvollständig";
+/* EDMarketConnector.py: We didn't have the Fleet Carrier callsign when we should have; In files: EDMarketConnector.py:1223; */
+"CAPI: Fleet Carrier data incomplete" = "CAPI: Carrier-Daten unvollständig";
 
 /* EDMarketConnector.py: No data was returned for the commander from the Frontier CAPI; In files: EDMarketConnector.py:1242; */
 "CAPI: No commander data returned" = "CAPI: Keine Kommandanten-Daten erhalten";
@@ -211,6 +231,24 @@
 /* EDMarketConnector.py: Popup window title for list of 'enabled' plugins that don't work with Python 3.x; In files: EDMarketConnector.py:2274; */
 "EDMC: Plugins Without Python 3.x Support" = "EDMC: Plugins ohne Python 3.x Support";
 
+/* EDMarketConnector.py: Popup window title for list of 'broken' plugins that failed to load; In files: EDMarketConnector.py:2285; */
+"EDMC: Broken Plugins" = "EDMC: Defekte Plugins";
+
+/* EDMarketConnector.py: Popup-text about 'broken' plugins that failed to load; In files: EDMarketConnector.py:2266; */
+"One or more of your enabled plugins failed to load. Please see the list on the '{PLUGINS}' tab of '{FILE}' > '{SETTINGS}'. This could be caused by a wrong folder structure. The load.py file should be located under plugins/PLUGIN_NAME/load.py.\r\n\r\nYou can disable a plugin by renaming its folder to have '{DISABLED}' on the end of the name." = "Eins oder mehr deiner aktivierten Plugins konnte nicht geladen werden. Du kannst dir die Liste im '{PLUGINS}'-Tab unter '{FILE}' > '{SETTINGS}' ansehen. Dies könnte an einer falschen Ordnerstruktur liegen. Die Datei load.py sollte sich unter plugins/PLUGIN_NAME/load.py befinden.\n\nDu kannst ein Plugin deaktivieren, indem du dessen Ordner ein '{DISABLED}' am Ende des Namens anhängst.";
+
+/* EDMarketConnector.py: Popup-text about Reset Providers; In files: EDMarketConnector.py:2146; */
+"One or more of your URL Providers were invalid, and have been reset:\r\n\r\n" = "Einer oder mehrere deiner URL-Anbieter waren ungültig und wurden zurückgesetzt:\n\n";
+
+/* EDMarketConnector.py: Text About What Provider Was Reset; In files: EDMarketConnector.py:2148; */
+"{PROVIDER} was set to {OLDPROV}, and has been reset to {NEWPROV}\r\n" = "{PROVIDER} war zuvor auf {OLDPROV} festgelegt und wurde zu {NEWPROV} zurückgesetzt.\n";
+
+/* EDMarketConnector.py: Popup window title for Reset Providers; In files: EDMarketConnector.py:2161; */
+"EDMC: Default Providers Reset" = "EDMC: Standardanbieter wurden zurückgesetzt";
+
+/* EDMarketConnector.py: Await Full CMDR Login to Game; In files: EDMarketConnector.py:813; */
+"Awaiting Full CMDR Login" = "Warte auf vollständige CMDR Anmeldung";
+
 /* journal_lock.py: Title text on popup when Journal directory already locked; In files: journal_lock.py:208; */
 "Journal directory already locked" = "Journal-Ordner bereits gesperrt";
 
@@ -226,13 +264,13 @@
 /* l10n.py: The system default language choice in Settings > Appearance; prefs.py: Settings > Configuration - Label on 'reset journal files location to default' button; prefs.py: The system default language choice in Settings > Appearance; prefs.py: Label for 'Default' theme radio button; In files: l10n.py:193; prefs.py:455; prefs.py:709; prefs.py:742; */
 "Default" = "Standard";
 
-/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:74; coriolis.py:77; coriolis.py:123; coriolis.py:139; coriolis.py:145; */
+/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:48; coriolis.py:74; coriolis.py:77; coriolis.py:94; coriolis.py:123; coriolis.py:139; coriolis.py:145; coriolis.py:179; coriolis.py:182; */
 "Auto" = "Auto";
 
-/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:75; coriolis.py:121; coriolis.py:137; */
+/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:49; coriolis.py:75; coriolis.py:95; coriolis.py:121; coriolis.py:137; coriolis.py:180; */
 "Normal" = "Normal";
 
-/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:76; coriolis.py:122; coriolis.py:138; */
+/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:50; coriolis.py:76; coriolis.py:96; coriolis.py:122; coriolis.py:138; coriolis.py:181; */
 "Beta" = "Beta";
 
 /* coriolis.py: Settings>Coriolis: Help/hint for changing coriolis URLs; In files: coriolis.py:91:93; */
@@ -280,9 +318,6 @@
 /* eddn.py: Status text shown while attempting to send data; In files: eddn.py:2507; */
 "Sending data to EDDN..." = "Daten werden an das EDDN gesendet...";
 
-/* edsm.py: Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:308; */
-"Send flight log and Cmdr status to EDSM" = "Sende Fluglog und CMDR-Status an EDSM";
-
 /* edsm.py: Settings>EDSM - Label on header/URL to EDSM API key page; In files: edsm.py:319; */
 "Elite Dangerous Star Map credentials" = "Elite: Dangerous Star Map Anmeldedaten";
 
@@ -322,9 +357,6 @@
 /* inara.py: INARA API returned some kind of error (error message will be contained in {MSG}); In files: inara.py:1650; inara.py:1663; */
 "Error: Inara {MSG}" = "Fehler: Inara {MSG}";
 
-/* prefs.py: File > Preferences menu entry for macOS; In files: prefs.py:237; */
-"Preferences" = "Einstellungen";
-
 /* prefs.py: Settings > Output - choosing what data to save to files; In files: prefs.py:335; */
 "Please choose what data to save" = "Bitte wähle zu speichernde Daten aus";
 
@@ -343,9 +375,6 @@
 /* prefs.py: Settings > Output - Label for "where files are located"; In files: prefs.py:379; prefs.py:398; */
 "File location" = "Speicherort";
 
-/* prefs.py: macOS Preferences - files location selection button; In files: prefs.py:387; prefs.py:437; */
-"Change..." = "Ordner...";
-
 /* prefs.py: NOT-macOS Settings - files location selection button; prefs.py: NOT-macOS Setting - files location selection button; In files: prefs.py:390; prefs.py:440; */
 "Browse..." = "Durchsuchen...";
 
@@ -359,22 +388,10 @@
 "CAPI Settings" = "CAPI-Einstellungen";
 
 /* prefs.py: Configuration - Enable or disable the Fleet Carrier CAPI calls; In files: prefs.py:475; */
-"Enable Fleetcarrier CAPI Queries" = "Fleet Carrier CAPI-Anfragen aktivieren";
-
-/* prefs.py: Hotkey/Shortcut settings prompt on OSX; In files: prefs.py:490; */
-"Keyboard shortcut" = "Makro";
+"Enable Fleet Carrier CAPI Queries" = "Carrier-CAPI-Anfragen aktivieren";
 
 /* prefs.py: Hotkey/Shortcut settings prompt on Windows; In files: prefs.py:492; */
 "Hotkey" = "Hotkey";
-
-/* prefs.py: macOS Preferences > Configuration - restart the app message; In files: prefs.py:501; */
-"Re-start {APP} to use shortcuts" = "Starte {APP} neu, um den Tastenkürzel nutzen zu können";
-
-/* prefs.py: macOS - Configuration - need to grant the app permission for keyboard shortcuts; In files: prefs.py:510; */
-"{APP} needs permission to use shortcuts" = "{APP} benötigt für Tastenkürzel Systemrechte (Bedienungshilfen)";
-
-/* prefs.py: Shortcut settings button on OSX; In files: prefs.py:515; */
-"Open System Preferences" = "Öffne Systemeinstellungen";
 
 /* prefs.py: Configuration - Act on hotkey only when ED is in foreground; In files: prefs.py:538; */
 "Only when Elite: Dangerous is the active app" = "Nur wenn Elite: Dangerous geöffnet ist";
@@ -451,9 +468,6 @@
 /* prefs.py: Label for location of third-party plugins folder; In files: prefs.py:908; */
 "Plugins folder" = "Plugin-Ordner";
 
-/* prefs.py: Label on button used to open a filesystem folder; In files: prefs.py:915; */
-"Open" = "Öffnen";
-
 /* prefs.py: Tip/label about how to disable plugins; In files: prefs.py:923; */
 "Tip: You can disable a plugin by{CR}adding '{EXT}' to its folder name" = "Tipp: Du kannst ein Plugin deaktivieren, indem{CR}du '{EXT}' zu seinem Ordnernamen hinzufügst";
 
@@ -461,13 +475,19 @@
 "Enabled Plugins" = "Aktivierte Plugins";
 
 /* prefs.py: Plugins - Label for list of 'enabled' plugins that don't work with Python 3.x; In files: prefs.py:954; */
-"Plugins Without Python 3.x Support:" = "Plugins ohne Python 3.x Support";
+"Plugins Without Python 3.x Support" = "Plugins ohne Python 3.x Support";
 
 /* prefs.py: Plugins - Label on URL to documentation about migrating plugins from Python 2.7; In files: prefs.py:962; */
 "Information on migrating plugins" = "Informationen zum Migrieren von Plugins";
 
+/* prefs.py: Plugins - Label for list of 'broken' plugins that failed to load; In files: prefs.py:1039; */
+"Broken Plugins" = "Defekte Plugins";
+
 /* prefs.py: Lable on list of user-disabled plugins; In files: prefs.py:977; */
 "Disabled Plugins" = "Deaktivierte Plugins";
+
+/* prefs.py: Catch & Record Profiler Errors; */
+"Error in System Profiler" = "Fehler im System Profiler";
 
 /* stats.py: Cmdr stats; In files: stats.py:58; */
 "Balance" = "Kontostand";
@@ -613,6 +633,9 @@
 /* stats.py: Exobiologist rank; In files: stats.py:132; */
 "Directionless" = "Ziellos";
 
+/* stats.py: Exobiologist rank; In files: stats.py:133; */
+"Mostly Directionless" = "Überwiegend Ziellos";
+
 /* stats.py: CQC rank; In files: stats.py:142; */
 "Helpless" = "Hilflos";
 
@@ -744,3 +767,25 @@
 
 /* stats.py: Status dialog title; In files: stats.py:418; */
 "Ships" = "Schiffe";
+
+/* update.py: Update Available Text; In files: update.py:229; */
+"{NEWVER} is available" = "{NEWVER} ist verfügbar";
+
+/* prefs.py: Stable Version of EDMC; */
+"Stable" = "Stabil";
+
+/* prefs.py: Select the Update Track (Beta, Stable); */
+"Update Track" = "Update-Kanal";
+
+/* EDMarketConnector.py: Inform the user the Update Track has changed; */
+"Update Track Changed to {TRACK}" = "Update-Kanal geändert auf {TRACK}";
+
+/* EDMarketConnector.py: Inform User of Beta -> Stable Transition Risks; */
+"Update track changed to Stable from Beta. You will no longer receive Beta updates. You will stay on your current Beta version until the next Stable release.\r\n\r\nYou can manually revert to the latest Stable version. To do so, you must download and install the latest Stable version manually. Note that this may introduce bugs or break completely if downgrading between major versions with significant changes.\r\n\r\nDo you want to open GitHub to download the latest release?" = "Update-Kanal von Beta auf Stabil geändert. Du wirst keine weiteren Beta-Updates erhalten. Du wirst bis zum nächsten stabilen Release auf der aktuellen Beta-Version bleiben.\n\nDu kannst manuell zur aktuellen stabilen Version zurückkehren. Um dies zu tun, musst du die aktuelle stabile Version manuell herunterladen und installieren. Beachte, dass dies Fehler verursachen oder gar nicht funktionieren könnte, wenn du von einem größeren Versionssprung mit signifikanten Änderungen downgradest.\n\nMöchtest du GitHub öffnen, um den neuesten Release herunterzuladen?";
+
+/* myNotebook.py: Can't Paste Images or Files in Text; */
+"Cannot paste non-text content." = "Kann keinen non-Text-Inhalt einfügen.";
+
+/* ttkHyperlinkLabel.py: Open Element In Selected Provider; */
+"Open in {URL}" = "Öffnen in {URL}";
+

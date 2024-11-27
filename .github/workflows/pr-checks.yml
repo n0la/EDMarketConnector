@@ -13,7 +13,7 @@ on:
 
 jobs:
   code-checks:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
 
@@ -28,7 +28,7 @@ jobs:
     # based on.
     - name: Checkout head commits
       # https://github.com/actions/checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       #with:
         #ref: ${{github.head.sha}}
         #repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -53,9 +53,10 @@ jobs:
     # Get Python set up
     ####################################################################
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version-file: '.python-version'
+        cache: 'pip' # caching pip dependencies
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

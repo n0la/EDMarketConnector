@@ -3,10 +3,10 @@
 """Plugin that tests that modules we bundle for plugins are present and working."""
 
 import logging
-import os
 import shutil
 import sqlite3
 import zipfile
+from pathlib import Path
 
 import semantic_version
 from SubA import SubA
@@ -14,7 +14,7 @@ from SubA import SubA
 from config import appname, appversion, config
 
 # This could also be returned from plugin_start3()
-plugin_name = os.path.basename(os.path.dirname(__file__))
+plugin_name = Path(__file__).resolve().parent.name
 
 # Logger per found plugin, so the folder name is included in
 # the logging format.
@@ -44,22 +44,22 @@ class This:
 this = This()
 
 
-class PluginTest(object):
+class PluginTest:
     """Class that performs actual tests on bundled modules."""
 
     def __init__(self, directory: str):
         logger.debug(f'directory = "{directory}')
-        dbfile = os.path.join(directory, this.DBFILE)
+        dbfile = Path(directory) / this.DBFILE
 
         # Test 'import zipfile'
-        with zipfile.ZipFile(dbfile + '.zip', 'w') as zip:
-            if os.path.exists(dbfile):
+        with zipfile.ZipFile(str(dbfile) + '.zip', 'w') as zip:
+            if dbfile.exists():
                 zip.write(dbfile)
         zip.close()
 
         # Testing 'import shutil'
-        if os.path.exists(dbfile):
-            shutil.copyfile(dbfile, dbfile + '.bak')
+        if dbfile.exists():
+            shutil.copyfile(dbfile, str(dbfile) + '.bak')
 
         # Testing 'import sqlite3'
         self.sqlconn = sqlite3.connect(dbfile)
@@ -83,7 +83,6 @@ class PluginTest(object):
         logger.debug(f'timestamp = "{timestamp}", cmdr = "{cmdrname}", system = "{system}", station = "{station}", event = "{event}"')  # noqa: E501
         self.sqlc.execute('INSERT INTO entries VALUES(?, ?, ?, ?, ?)', (timestamp, cmdrname, system, station, event))
         self.sqlconn.commit()
-        return None
 
 
 def plugin_start3(plugin_dir: str) -> str:

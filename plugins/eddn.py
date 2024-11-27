@@ -1,26 +1,25 @@
-"""Handle exporting data to EDDN."""
+"""
+eddn.py - Exporting Data to EDDN.
 
-# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $#
-# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $#
-#
-# This is an EDMC 'core' plugin.
-#
-# All EDMC plugins are *dynamically* loaded at run-time.
-#
-# We build for Windows using `py2exe`.
-#
-# `py2exe` can't possibly know about anything in the dynamically loaded
-# core plugins.
-#
-# Thus you **MUST** check if any imports you add in this file are only
-# referenced in this file (or only in any other core plugin), and if so...
-#
-#     YOU MUST ENSURE THAT PERTINENT ADJUSTMENTS ARE MADE IN
-#     `build.py` SO AS TO ENSURE THE FILES ARE ACTUALLY PRESENT
-#     IN AN END-USER INSTALLATION ON WINDOWS.
-#
-# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $#
-# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $# ! $#
+Copyright (c) EDCD, All Rights Reserved
+Licensed under the GNU General Public License.
+See LICENSE file.
+
+This is an EDMC 'core' plugin.
+All EDMC plugins are *dynamically* loaded at run-time.
+
+We build for Windows using `py2exe`.
+`py2exe` can't possibly know about anything in the dynamically loaded core plugins.
+
+Thus, you **MUST** check if any imports you add in this file are only
+referenced in this file (or only in any other core plugin), and if so...
+
+    YOU MUST ENSURE THAT PERTINENT ADJUSTMENTS ARE MADE IN
+    `build.py` TO ENSURE THE FILES ARE ACTUALLY PRESENT
+    IN AN END-USER INSTALLATION ON WINDOWS.
+"""
+from __future__ import annotations
+
 import http
 import itertools
 import json
@@ -28,18 +27,12 @@ import os
 import pathlib
 import re
 import sqlite3
-import sys
 import tkinter as tk
-from collections import OrderedDict
 from platform import system
 from textwrap import dedent
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, MutableMapping, Optional
-from typing import OrderedDict as OrderedDictT
-from typing import Tuple, Union
-
+from typing import Any, Iterator, Mapping, MutableMapping
 import requests
-
 import companion
 import edmc_data
 import killswitch
@@ -53,10 +46,7 @@ from myNotebook import Frame
 from prefs import prefsVersion
 from ttkHyperlinkLabel import HyperlinkLabel
 from util import text
-
-if TYPE_CHECKING:
-    def _(x: str) -> str:
-        return x
+from l10n import translations as tr
 
 logger = get_main_logger()
 
@@ -82,27 +72,27 @@ class This:
         self.odyssey = False
 
         # Track location to add to Journal events
-        self.system_address: Optional[str] = None
-        self.system_name: Optional[str] = None
-        self.coordinates: Optional[Tuple] = None
-        self.body_name: Optional[str] = None
-        self.body_id: Optional[int] = None
-        self.body_type: Optional[int] = None
+        self.system_address: str | None = None
+        self.system_name: str | None = None
+        self.coordinates: tuple | None = None
+        self.body_name: str | None = None
+        self.body_id: int | None = None
+        self.body_type: int | None = None
         self.station_name: str | None = None
         self.station_type: str | None = None
         self.station_marketid: str | None = None
         # Track Status.json data
-        self.status_body_name: Optional[str] = None
+        self.status_body_name: str | None = None
 
         # Avoid duplicates
-        self.marketId: Optional[str] = None
-        self.commodities: Optional[list[OrderedDictT[str, Any]]] = None
-        self.outfitting: Optional[Tuple[bool, list[str]]] = None
-        self.shipyard: Optional[Tuple[bool, list[Mapping[str, Any]]]] = None
+        self.marketId: str | None = None
+        self.commodities: list[dict[str, Any]] | None = None
+        self.outfitting: tuple[bool, list[str]] | None = None
+        self.shipyard: tuple[bool, list[Mapping[str, Any]]] | None = None
         self.fcmaterials_marketid: int = 0
-        self.fcmaterials: Optional[list[OrderedDictT[str, Any]]] = None
+        self.fcmaterials: list[dict[str, Any]] | None = None
         self.fcmaterials_capi_marketid: int = 0
-        self.fcmaterials_capi: Optional[list[OrderedDictT[str, Any]]] = None
+        self.fcmaterials_capi: list[dict[str, Any]] | None = None
 
         # For the tkinter parent window, so we can call update_idletasks()
         self.parent: tk.Tk
@@ -156,7 +146,7 @@ class EDDNSender:
     UNKNOWN_SCHEMA_RE = re.compile(
         r"^FAIL: \[JsonValidationException\('Schema "
         r"https://eddn.edcd.io/schemas/(?P<schema_name>.+)/(?P<schema_version>[0-9]+) is unknown, "
-        r"unable to validate.',\)\]$"
+        r"unable to validate.',\)]$"
     )
 
     def __init__(self, eddn: 'EDDN', eddn_endpoint: str) -> None:
@@ -203,10 +193,8 @@ class EDDNSender:
         db = db_conn.cursor()
 
         try:
-            db.execute(
-                """
-                CREATE TABLE messages
-                (
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     created TEXT NOT NULL,
                     cmdr TEXT NOT NULL,
@@ -215,26 +203,12 @@ class EDDNSender:
                     game_build TEXT,
                     message TEXT NOT NULL
                 )
-                """
-            )
+            """)
 
-            db.execute(
-                """
-                CREATE INDEX messages_created ON messages
-                (
-                    created
-                )
-                """
-            )
+            db.execute("CREATE INDEX IF NOT EXISTS messages_created ON messages (created)")
+            db.execute("CREATE INDEX IF NOT EXISTS messages_cmdr ON messages (cmdr)")
 
-            db.execute(
-                """
-                CREATE INDEX messages_cmdr ON messages
-                (
-                    cmdr
-                )
-                """
-            )
+            logger.info("New 'eddn_queue-v1.db' created")
 
         except sqlite3.OperationalError as e:
             if str(e) != "table messages already exists":
@@ -242,12 +216,6 @@ class EDDNSender:
                 db.close()
                 db_conn.close()
                 raise e
-
-        else:
-            logger.info("New `eddn_queue-v1.db` created")
-
-        # We return only the connection, so tidy up
-        db.close()
 
         return db_conn
 
@@ -264,11 +232,10 @@ class EDDNSender:
         except FileNotFoundError:
             return
 
+        logger.info("Conversion to `eddn_queue-v1.db` complete, removing `replay.jsonl`")
         # Best effort at removing the file/contents
-        # NB: The legacy code assumed it could write to the file.
-        logger.info("Conversion` to `eddn_queue-v1.db` complete, removing `replay.jsonl`")
-        replay_file = open(filename, 'w')  # Will truncate
-        replay_file.close()
+        with open(filename, 'w') as replay_file:
+            replay_file.truncate()
         os.unlink(filename)
 
     def close(self) -> None:
@@ -305,7 +272,7 @@ class EDDNSender:
             msg['header'] = {
                 # We have to lie and say it's *this* version, but denote that
                 # it might not actually be this version.
-                'softwareName': f'{applongname} [{system() if sys.platform != "darwin" else "Mac OS"}]'
+                'softwareName': f'{applongname} [{system()}]'
                                 ' (legacy replay)',
                 'softwareVersion': str(appversion_nobuild()),
                 'uploaderID': cmdr,
@@ -423,7 +390,7 @@ class EDDNSender:
 
         # Even the smallest possible message compresses somewhat, so always compress
         encoded, compressed = text.gzip(json.dumps(new_data, separators=(',', ':')), max_size=0)
-        headers: None | dict[str, str] = None
+        headers: dict[str, str] | None = None
         if compressed:
             headers = {'Content-Encoding': 'gzip'}
 
@@ -448,25 +415,24 @@ class EDDNSender:
             r.raise_for_status()
 
         except requests.exceptions.HTTPError as e:
-            if unknown_schema := self.UNKNOWN_SCHEMA_RE.match(e.response.text):
+            if unknown_schema := self.UNKNOWN_SCHEMA_RE.match(e.response.text):  # type: ignore
                 logger.debug(f"EDDN doesn't (yet?) know about schema: {unknown_schema['schema_name']}"
                              f"/{unknown_schema['schema_version']}")
                 # This dropping is to cater for the time period when EDDN doesn't *yet* support a new schema.
                 return True
 
-            elif e.response.status_code == http.HTTPStatus.BAD_REQUEST:
+            if e.response.status_code == http.HTTPStatus.BAD_REQUEST:  # type: ignore
                 # EDDN straight up says no, so drop the message
                 logger.debug(f"EDDN responded '400 Bad Request' to the message, dropping:\n{msg!r}")
                 return True
 
-            else:
-                # This should catch anything else, e.g. timeouts, gateway errors
-                self.set_ui_status(self.http_error_to_log(e))
+            # This should catch anything else, e.g. timeouts, gateway errors
+            self.set_ui_status(self.http_error_to_log(e))
 
         except requests.exceptions.RequestException as e:
             logger.debug('Failed sending', exc_info=e)
             # LANG: Error while trying to send data to EDDN
-            self.set_ui_status(_("Error: Can't connect to EDDN"))
+            self.set_ui_status(tr.tl("Error: Can't connect to EDDN"))
 
         except Exception as e:
             logger.debug('Failed sending', exc_info=e)
@@ -485,19 +451,26 @@ class EDDNSender:
         if not self.queue_processing.acquire(blocking=False):
             logger.trace_if("plugin.eddn.send", "Couldn't obtain mutex")
             if reschedule:
-                logger.trace_if("plugin.eddn.send", f"Next run scheduled for {self.eddn.REPLAY_PERIOD}ms from now")
-                self.eddn.parent.after(self.eddn.REPLAY_PERIOD, self.queue_check_and_send, reschedule)
+                logger.trace_if(
+                    "plugin.eddn.send",
+                    f"Next run scheduled for {self.eddn.REPLAY_PERIOD}ms from now",
+                )
+                self.eddn.parent.after(
+                    self.eddn.REPLAY_PERIOD, self.queue_check_and_send, reschedule
+                )
 
             else:
-                logger.trace_if("plugin.eddn.send", "NO next run scheduled (there should be another one already set)")
+                logger.trace_if(
+                    "plugin.eddn.send",
+                    "NO next run scheduled (there should be another one already set)",
+                )
 
             return
-
         logger.trace_if("plugin.eddn.send", "Obtained mutex")
         # Used to indicate if we've rescheduled at the faster rate already.
         have_rescheduled = False
         # We send either if docked or 'Delay sending until docked' not set
-        if this.docked or not (config.get_int('output') & config.OUT_EDDN_DELAY):
+        if this.docked or not config.get_int('output') & config.OUT_EDDN_DELAY:
             logger.trace_if("plugin.eddn.send", "Should send")
             # We need our own cursor here, in case the semantics of
             # tk `after()` could allow this to run in the middle of other
@@ -516,7 +489,7 @@ class EDDNSender:
                 db_cursor.execute(
                     """
                     SELECT id FROM messages
-                    ORDER BY created ASC
+                    ORDER BY created
                     LIMIT 1
                     """
                 )
@@ -584,18 +557,17 @@ class EDDNSender:
         if status_code == 429:  # HTTP UPGRADE REQUIRED
             logger.warning('EDMC is sending schemas that are too old')
             # LANG: EDDN has banned this version of our client
-            return _('EDDN Error: EDMC is too old for EDDN. Please update.')
+            return tr.tl('EDDN Error: EDMC is too old for EDDN. Please update.')
 
-        elif status_code == 400:
+        if status_code == 400:
             # we a validation check or something else.
             logger.warning(f'EDDN Error: {status_code} -- {exception.response}')
             # LANG: EDDN returned an error that indicates something about what we sent it was wrong
-            return _('EDDN Error: Validation Failed (EDMC Too Old?). See Log')
+            return tr.tl('EDDN Error: Validation Failed (EDMC Too Old?). See Log')
 
-        else:
-            logger.warning(f'Unknown status code from EDDN: {status_code} -- {exception.response}')
-            # LANG: EDDN returned some sort of HTTP error, one we didn't expect. {STATUS} contains a number
-            return _('EDDN Error: Returned {STATUS} status code').format(STATUS=status_code)
+        logger.warning(f'Unknown status code from EDDN: {status_code} -- {exception.response}')
+        # LANG: EDDN returned some sort of HTTP error, one we didn't expect. {STATUS} contains a number
+        return tr.tl('EDDN Error: Returned {STATUS} status code').format(STATUS=status_code)
 
 
 # TODO: a good few of these methods are static or could be classmethods. they should be created as such.
@@ -667,21 +639,21 @@ class EDDN:
             modules,
             ships
         )
-        commodities: list[OrderedDictT[str, Any]] = []
+        commodities: list[dict[str, Any]] = []
         for commodity in data['lastStarport'].get('commodities') or []:
             # Check 'marketable' and 'not prohibited'
             if (category_map.get(commodity['categoryname'], True)
                     and not commodity.get('legality')):
-                commodities.append(OrderedDict([
-                    ('name',          commodity['name'].lower()),
-                    ('meanPrice',     int(commodity['meanPrice'])),
-                    ('buyPrice',      int(commodity['buyPrice'])),
-                    ('stock',         int(commodity['stock'])),
-                    ('stockBracket',  commodity['stockBracket']),
-                    ('sellPrice',     int(commodity['sellPrice'])),
-                    ('demand',        int(commodity['demand'])),
-                    ('demandBracket', commodity['demandBracket']),
-                ]))
+                commodities.append({
+                    'name': commodity['name'].lower(),
+                    'meanPrice': int(commodity['meanPrice']),
+                    'buyPrice': int(commodity['buyPrice']),
+                    'stock': int(commodity['stock']),
+                    'stockBracket': commodity['stockBracket'],
+                    'sellPrice': int(commodity['sellPrice']),
+                    'demand': int(commodity['demand']),
+                    'demandBracket': commodity['demandBracket'],
+                })
 
                 if commodity['statusFlags']:
                     commodities[-1]['statusFlags'] = commodity['statusFlags']
@@ -695,15 +667,15 @@ class EDDN:
         # none and that really does need to be recorded over EDDN so that
         # tools can update in a timely manner.
         if this.commodities != commodities:
-            message: OrderedDictT[str, Any] = OrderedDict([
-                ('timestamp',   data['timestamp']),
-                ('systemName',  data['lastSystem']['name']),
-                ('stationName', data['lastStarport']['name']),
-                ('marketId',    data['lastStarport']['id']),
-                ('commodities', commodities),
-                ('horizons',    horizons),
-                ('odyssey',     this.odyssey),
-            ])
+            message: dict[str, Any] = {
+                'timestamp': data['timestamp'],
+                'systemName': data['lastSystem']['name'],
+                'stationName': data['lastStarport']['name'],
+                'marketId': data['lastStarport']['id'],
+                'commodities': commodities,
+                'horizons': horizons,
+                'odyssey': this.odyssey,
+            }
 
             if 'economies' in data['lastStarport']:
                 message['economies'] = sorted(
@@ -729,7 +701,7 @@ class EDDN:
         # Send any FCMaterials.json-equivalent 'orders' as well
         self.export_capi_fcmaterials(data, is_beta, horizons)
 
-    def safe_modules_and_ships(self, data: Mapping[str, Any]) -> Tuple[dict, dict]:
+    def safe_modules_and_ships(self, data: Mapping[str, Any]) -> tuple[dict, dict]:
         """
         Produce a sanity-checked version of ships and modules from CAPI data.
 
@@ -763,7 +735,7 @@ class EDDN:
                 logger.debug('ships was None')
 
             else:
-                logger.error(f'ships was neither None nor a Dict! Type = {type(ships)}')
+                logger.error(f'ships was neither None nor a dict! Type = {type(ships)}')
             # Set a safe value
             ships = {'shipyard_list': {}, 'unavailable_list': []}
 
@@ -818,16 +790,16 @@ class EDDN:
         if outfitting and this.outfitting != (horizons, outfitting):
             self.send_message(data['commander']['name'], {
                 '$schemaRef': f'https://eddn.edcd.io/schemas/outfitting/2{"/test" if is_beta else ""}',
-                'message': OrderedDict([
-                    ('timestamp',   data['timestamp']),
-                    ('systemName',  data['lastSystem']['name']),
-                    ('stationName', data['lastStarport']['name']),
-                    ('marketId',    data['lastStarport']['id']),
-                    ('horizons',    horizons),
-                    ('modules',     outfitting),
-                    ('odyssey',     this.odyssey),
-                ]),
-                'header':     self.standard_header(
+                'message': {
+                    'timestamp': data['timestamp'],
+                    'systemName': data['lastSystem']['name'],
+                    'stationName': data['lastStarport']['name'],
+                    'marketId': data['lastStarport']['id'],
+                    'horizons': horizons,
+                    'modules': outfitting,
+                    'odyssey': this.odyssey,
+                },
+                'header': self.standard_header(
                     game_version=self.capi_gameversion_from_host_endpoint(
                         data.source_host, companion.Session.FRONTIER_CAPI_PATH_SHIPYARD
                     ),
@@ -880,15 +852,15 @@ class EDDN:
         if shipyard and this.shipyard != (horizons, shipyard):
             self.send_message(data['commander']['name'], {
                 '$schemaRef': f'https://eddn.edcd.io/schemas/shipyard/2{"/test" if is_beta else ""}',
-                'message': OrderedDict([
-                    ('timestamp',   data['timestamp']),
-                    ('systemName',  data['lastSystem']['name']),
-                    ('stationName', data['lastStarport']['name']),
-                    ('marketId',    data['lastStarport']['id']),
-                    ('horizons',    horizons),
-                    ('ships',       shipyard),
-                    ('odyssey',     this.odyssey),
-                ]),
+                'message': {
+                    'timestamp': data['timestamp'],
+                    'systemName': data['lastSystem']['name'],
+                    'stationName': data['lastStarport']['name'],
+                    'marketId': data['lastStarport']['id'],
+                    'horizons': horizons,
+                    'ships': shipyard,
+                    'odyssey': this.odyssey,
+                },
                 'header': self.standard_header(
                     game_version=self.capi_gameversion_from_host_endpoint(
                         data.source_host, companion.Session.FRONTIER_CAPI_PATH_SHIPYARD
@@ -914,16 +886,22 @@ class EDDN:
         :param entry: the journal entry containing the commodities data
         """
         items: list[Mapping[str, Any]] = entry.get('Items') or []
-        commodities: list[OrderedDictT[str, Any]] = sorted((OrderedDict([
-            ('name',          self.canonicalise(commodity['Name'])),
-            ('meanPrice',     commodity['MeanPrice']),
-            ('buyPrice',      commodity['BuyPrice']),
-            ('stock',         commodity['Stock']),
-            ('stockBracket',  commodity['StockBracket']),
-            ('sellPrice',     commodity['SellPrice']),
-            ('demand',        commodity['Demand']),
-            ('demandBracket', commodity['DemandBracket']),
-        ]) for commodity in items), key=lambda c: c['name'])
+        commodities: list[dict[str, Any]] = sorted(
+            (
+                {
+                    'name': self.canonicalise(commodity['Name']),
+                    'meanPrice': commodity['MeanPrice'],
+                    'buyPrice': commodity['BuyPrice'],
+                    'stock': commodity['Stock'],
+                    'stockBracket': commodity['StockBracket'],
+                    'sellPrice': commodity['SellPrice'],
+                    'demand': commodity['Demand'],
+                    'demandBracket': commodity['DemandBracket'],
+                }
+                for commodity in items
+            ),
+            key=lambda c: c['name']
+        )
 
         # This used to have a check `commodities and ` at the start so as to
         # not send an empty commodities list, as the EDDN Schema doesn't allow
@@ -932,18 +910,24 @@ class EDDN:
         # none and that really does need to be recorded over EDDN so that
         # tools can update in a timely manner.
         if this.commodities != commodities:
-            self.send_message(cmdr, {
+            message: dict[str, Any] = {  # Yes, this is a broad type hint.
                 '$schemaRef': f'https://eddn.edcd.io/schemas/commodity/3{"/test" if is_beta else ""}',
-                'message': OrderedDict([
-                    ('timestamp',   entry['timestamp']),
-                    ('systemName',  entry['StarSystem']),
-                    ('stationName', entry['StationName']),
-                    ('marketId',    entry['MarketID']),
-                    ('commodities', commodities),
-                    ('horizons',    this.horizons),
-                    ('odyssey',     this.odyssey),
-                ]),
-            })
+                'message': {
+                    'timestamp': entry['timestamp'],
+                    'systemName': entry['StarSystem'],
+                    'stationName': entry['StationName'],
+                    'marketId': entry['MarketID'],
+                    'commodities': commodities,
+                    'horizons': this.horizons,
+                    'odyssey': this.odyssey,
+                    'stationType': entry['StationType'],
+                }
+            }
+
+            if entry.get('CarrierDockingAccess'):
+                message['message']['carrierDockingAccess'] = entry['CarrierDockingAccess']
+
+            self.send_message(cmdr, message)
 
         this.commodities = commodities
 
@@ -973,15 +957,15 @@ class EDDN:
         if outfitting and this.outfitting != (horizons, outfitting):
             self.send_message(cmdr, {
                 '$schemaRef': f'https://eddn.edcd.io/schemas/outfitting/2{"/test" if is_beta else ""}',
-                'message': OrderedDict([
-                    ('timestamp',   entry['timestamp']),
-                    ('systemName',  entry['StarSystem']),
-                    ('stationName', entry['StationName']),
-                    ('marketId',    entry['MarketID']),
-                    ('horizons',    horizons),
-                    ('modules',     outfitting),
-                    ('odyssey',     entry['odyssey'])
-                ]),
+                'message': {
+                    'timestamp':   entry['timestamp'],
+                    'systemName':  entry['StarSystem'],
+                    'stationName': entry['StationName'],
+                    'marketId':    entry['MarketID'],
+                    'horizons':    horizons,
+                    'modules':     outfitting,
+                    'odyssey':     entry['odyssey']
+                },
             })
 
         this.outfitting = (horizons, outfitting)
@@ -1000,22 +984,22 @@ class EDDN:
         :param is_beta: Whether or not we're in beta mode
         :param entry: the relevant journal entry
         """
-        ships: list[Mapping[str, Any]] = entry.get('PriceList') or []
+        ships: list[Mapping[str, Any]] = entry.get('Pricelist') or []
         horizons: bool = entry.get('Horizons', False)
         shipyard = sorted(ship['ShipType'] for ship in ships)
         # Don't send empty ships list - shipyard data is only guaranteed present if user has visited the shipyard.
         if shipyard and this.shipyard != (horizons, shipyard):
             self.send_message(cmdr, {
                 '$schemaRef': f'https://eddn.edcd.io/schemas/shipyard/2{"/test" if is_beta else ""}',
-                'message': OrderedDict([
-                    ('timestamp',   entry['timestamp']),
-                    ('systemName',  entry['StarSystem']),
-                    ('stationName', entry['StationName']),
-                    ('marketId',    entry['MarketID']),
-                    ('horizons',    horizons),
-                    ('ships',       shipyard),
-                    ('odyssey',     entry['odyssey'])
-                ]),
+                'message': {
+                    'timestamp':   entry['timestamp'],
+                    'systemName':  entry['StarSystem'],
+                    'stationName': entry['StationName'],
+                    'marketId':    entry['MarketID'],
+                    'horizons':    horizons,
+                    'ships':       shipyard,
+                    'odyssey':     entry['odyssey']
+                },
             })
 
         # this.shipyard = (horizons, shipyard)
@@ -1050,13 +1034,13 @@ class EDDN:
                 msg['header'] = self.standard_header()
 
             msg_id = self.sender.add_message(cmdr, msg)
-            if this.docked or not (config.get_int('output') & config.OUT_EDDN_DELAY):
+            if this.docked or not config.get_int('output') & config.OUT_EDDN_DELAY:
                 # No delay in sending configured, so attempt immediately
                 logger.trace_if("plugin.eddn.send", "Sending 'non-station' message")
                 self.sender.send_message_by_id(msg_id)
 
     def standard_header(
-        self, game_version: Optional[str] = None, game_build: Optional[str] = None
+        self, game_version: str | None = None, game_build: str | None = None
     ) -> MutableMapping[str, Any]:
         """
         Return the standard header for an EDDN message, given tracked state.
@@ -1080,7 +1064,7 @@ class EDDN:
             gb = this.game_build
 
         return {
-            'softwareName':    f'{applongname} [{system() if sys.platform != "darwin" else "Mac OS"}]',
+            'softwareName':    f'{applongname} [{system()}]',
             'softwareVersion': str(appversion_nobuild()),
             'uploaderID':      this.cmdr_name,
             'gameversion':     gv,
@@ -1106,7 +1090,7 @@ class EDDN:
             entry: MutableMapping[str, Any],
             system_name: str,
             system_coordinates: list
-    ) -> Union[str, MutableMapping[str, Any]]:
+    ) -> str | MutableMapping[str, Any]:
         """
         Augment a journal entry with necessary system data.
 
@@ -1123,8 +1107,7 @@ class EDDN:
                 logger.warning(f'No system name in entry, and system_name was not set either!  entry:\n{entry!r}\n')
                 return "passed-in system_name is empty, can't add System"
 
-            else:
-                entry['StarSystem'] = system_name
+            entry['StarSystem'] = system_name
 
         if 'SystemAddress' not in entry:
             if this.system_address is None:
@@ -1149,7 +1132,7 @@ class EDDN:
 
     def export_journal_fssdiscoveryscan(
             self, cmdr: str, system_name: str, system_starpos: list, is_beta: bool, entry: Mapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send an FSSDiscoveryScan to EDDN on the correct schema.
 
@@ -1191,7 +1174,7 @@ class EDDN:
 
     def export_journal_navbeaconscan(
             self, cmdr: str, system_name: str, system_starpos: list, is_beta: bool, entry: Mapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send an NavBeaconScan to EDDN on the correct schema.
 
@@ -1233,7 +1216,7 @@ class EDDN:
 
     def export_journal_codexentry(  # noqa: CCR001
             self, cmdr: str, system_starpos: list, is_beta: bool, entry: MutableMapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send a CodexEntry to EDDN on the correct schema.
 
@@ -1335,7 +1318,7 @@ class EDDN:
 
     def export_journal_scanbarycentre(
             self, cmdr: str, system_starpos: list, is_beta: bool, entry: Mapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send a ScanBaryCentre to EDDN on the correct schema.
 
@@ -1389,7 +1372,7 @@ class EDDN:
 
     def export_journal_navroute(
             self, cmdr: str, is_beta: bool, entry: MutableMapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send a NavRoute to EDDN on the correct schema.
 
@@ -1433,15 +1416,6 @@ class EDDN:
         #######################################################################
         # Elisions
         #######################################################################
-        # WORKAROUND WIP EDDN schema | 2021-10-17: This will reject with the Odyssey or Horizons flags present
-        if 'odyssey' in entry:
-            del entry['odyssey']
-
-        if 'horizons' in entry:
-            del entry['horizons']
-
-        # END WORKAROUND
-
         # In case Frontier ever add any
         entry = filter_localised(entry)
         #######################################################################
@@ -1462,7 +1436,7 @@ class EDDN:
 
     def export_journal_fcmaterials(
         self, cmdr: str, is_beta: bool, entry: MutableMapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send an FCMaterials message to EDDN on the correct schema.
 
@@ -1546,7 +1520,7 @@ class EDDN:
 
     def export_capi_fcmaterials(
         self, data: CAPIData, is_beta: bool, horizons: bool
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send CAPI-sourced 'onfootmicroresources' data on `fcmaterials/1` schema.
 
@@ -1609,7 +1583,7 @@ class EDDN:
 
     def export_journal_approachsettlement(
         self, cmdr: str, system_name: str, system_starpos: list, is_beta: bool, entry: MutableMapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send an ApproachSettlement to EDDN on the correct schema.
 
@@ -1684,7 +1658,7 @@ class EDDN:
 
     def export_journal_fssallbodiesfound(
         self, cmdr: str, system_name: str, system_starpos: list, is_beta: bool, entry: MutableMapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send an FSSAllBodiesFound message to EDDN on the correct schema.
 
@@ -1734,7 +1708,7 @@ class EDDN:
 
     def export_journal_fssbodysignals(
         self, cmdr: str, system_name: str, system_starpos: list, is_beta: bool, entry: MutableMapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send an FSSBodySignals message to EDDN on the correct schema.
 
@@ -1804,7 +1778,7 @@ class EDDN:
 
     def export_journal_fsssignaldiscovered(
         self, cmdr: str, system_name: str, system_starpos: list, is_beta: bool, entry: MutableMapping[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send an FSSSignalDiscovered message to EDDN on the correct schema.
 
@@ -1897,6 +1871,74 @@ class EDDN:
 
         return None
 
+    def export_journal_dockingdenied(
+            self, cmdr: str, is_beta: bool, entry: Mapping[str, Any]
+    ) -> str | None:
+        """
+        Send a DockingDenied to EDDN on the correct schema.
+
+        :param cmdr: the commander under which this upload is made
+        :param is_beta: whether or not we are in beta mode
+        :param entry: the journal entry to send
+        ___
+        Example:
+        {
+            "timestamp":"2022-06-10T10:09:41Z",
+            "event":"DockingDenied",
+            "Reason":"RestrictedAccess",
+            "MarketID":3706117376,
+            "StationName":"V7G-T1G",
+            "StationType":"FleetCarrier"
+        }
+        """
+        #######################################################################
+        # Elisions
+        #######################################################################
+        # In case Frontier ever add any
+        entry = filter_localised(entry)
+
+        msg = {
+            '$schemaRef': f'https://eddn.edcd.io/schemas/dockingdenied/1{"/test" if is_beta else ""}',
+            'message': entry
+        }
+
+        this.eddn.send_message(cmdr, msg)
+        return None
+
+    def export_journal_dockinggranted(
+            self, cmdr: str, is_beta: bool, entry: Mapping[str, Any]
+    ) -> str | None:
+        """
+        Send a DockingDenied to EDDN on the correct schema.
+
+        :param cmdr: the commander under which this upload is made
+        :param is_beta: whether or not we are in beta mode
+        :param entry: the journal entry to send
+        ___
+        Example:
+        {
+            "timestamp":"2023-10-01T14:56:34Z",
+            "event":"DockingGranted",
+            "LandingPad":41,
+            "MarketID":3227312896,
+            "StationName":"Evans Horizons",
+            "StationType":"Coriolis"
+        }
+        """
+        #######################################################################
+        # Elisions
+        #######################################################################
+        # In case Frontier ever add any
+        entry = filter_localised(entry)
+
+        msg = {
+            '$schemaRef': f'https://eddn.edcd.io/schemas/dockinggranted/1{"/test" if is_beta else ""}',
+            'message': entry
+        }
+
+        this.eddn.send_message(cmdr, msg)
+        return None
+
     def canonicalise(self, item: str) -> str:
         """
         Canonicalise the given commodity name.
@@ -1907,7 +1949,7 @@ class EDDN:
         match = self.CANONICALISE_RE.match(item)
         return match and match.group(1) or item
 
-    def capi_gameversion_from_host_endpoint(self, capi_host: Optional[str], capi_endpoint: str) -> str:
+    def capi_gameversion_from_host_endpoint(self, capi_host: str | None, capi_endpoint: str) -> str:
         """
         Return the correct CAPI gameversion string for the given host/endpoint.
 
@@ -1918,14 +1960,14 @@ class EDDN:
         gv = ''
         #######################################################################
         # Base string
-        if capi_host == companion.SERVER_LIVE or capi_host == companion.SERVER_BETA:
+        if capi_host in (companion.SERVER_LIVE, companion.SERVER_BETA):
             gv = 'CAPI-Live-'
 
         elif capi_host == companion.SERVER_LEGACY:
             gv = 'CAPI-Legacy-'
 
         else:
-            # Technically incorrect, but it will inform Listeners
+            # Technically incorrect, but it will inform listeners
             logger.error(f"{capi_host=} lead to bad gameversion")
             gv = 'CAPI-UNKNOWN-'
         #######################################################################
@@ -1939,7 +1981,7 @@ class EDDN:
             gv += 'shipyard'
 
         else:
-            # Technically incorrect, but it will inform Listeners
+            # Technically incorrect, but it will inform listeners
             logger.error(f"{capi_endpoint=} lead to bad gameversion")
             gv += 'UNKNOWN'
         #######################################################################
@@ -1958,7 +2000,7 @@ def plugin_start3(plugin_dir: str) -> str:
     return 'EDDN'
 
 
-def plugin_app(parent: tk.Tk) -> Optional[tk.Frame]:
+def plugin_app(parent: tk.Tk) -> tk.Frame | None:
     """
     Set up any plugin-specific UI.
 
@@ -2105,53 +2147,58 @@ def plugin_prefs(parent, cmdr: str, is_beta: bool) -> Frame:
     """
     PADX = 10  # noqa: N806
     BUTTONX = 12  # noqa: N806 # indent Checkbuttons and Radiobuttons
+    PADY = 1  # noqa: N806
 
     if prefsVersion.shouldSetDefaults('0.0.0.0', not bool(config.get_int('output'))):
-        output: int = (config.OUT_EDDN_SEND_STATION_DATA | config.OUT_EDDN_SEND_NON_STATION)  # default settings
+        output: int = config.OUT_EDDN_SEND_STATION_DATA | config.OUT_EDDN_SEND_NON_STATION  # default settings
 
     else:
         output = config.get_int('output')
 
     eddnframe = nb.Frame(parent)
 
+    cur_row = 0
     HyperlinkLabel(
         eddnframe,
         text='Elite Dangerous Data Network',
         background=nb.Label().cget('background'),
         url='https://github.com/EDCD/EDDN#eddn---elite-dangerous-data-network',
         underline=True
-    ).grid(padx=PADX, sticky=tk.W)  # Don't translate
+    ).grid(row=cur_row, padx=PADX, pady=PADY, sticky=tk.W)  # Don't translate
+    cur_row += 1
 
     this.eddn_station = tk.IntVar(value=(output & config.OUT_EDDN_SEND_STATION_DATA) and 1)
     this.eddn_station_button = nb.Checkbutton(
         eddnframe,
         # LANG: Enable EDDN support for station data checkbox label
-        text=_('Send station data to the Elite Dangerous Data Network'),
+        text=tr.tl('Send station data to the Elite Dangerous Data Network'),
         variable=this.eddn_station,
         command=prefsvarchanged
     )  # Output setting
+    this.eddn_station_button.grid(row=cur_row, padx=BUTTONX, pady=PADY, sticky=tk.W)
+    cur_row += 1
 
-    this.eddn_station_button.grid(padx=BUTTONX, pady=(5, 0), sticky=tk.W)
     this.eddn_system = tk.IntVar(value=(output & config.OUT_EDDN_SEND_NON_STATION) and 1)
     # Output setting new in E:D 2.2
     this.eddn_system_button = nb.Checkbutton(
         eddnframe,
         # LANG: Enable EDDN support for system and other scan data checkbox label
-        text=_('Send system and scan data to the Elite Dangerous Data Network'),
+        text=tr.tl('Send system and scan data to the Elite Dangerous Data Network'),
         variable=this.eddn_system,
         command=prefsvarchanged
     )
+    this.eddn_system_button.grid(row=cur_row, padx=BUTTONX, pady=PADY, sticky=tk.W)
+    cur_row += 1
 
-    this.eddn_system_button.grid(padx=BUTTONX, pady=(5, 0), sticky=tk.W)
     this.eddn_delay = tk.IntVar(value=(output & config.OUT_EDDN_DELAY) and 1)
     # Output setting under 'Send system and scan data to the Elite Dangerous Data Network' new in E:D 2.2
     this.eddn_delay_button = nb.Checkbutton(
         eddnframe,
         # LANG: EDDN delay sending until docked option is on, this message notes that a send was skipped due to this
-        text=_('Delay sending until docked'),
+        text=tr.tl('Delay sending until docked'),
         variable=this.eddn_delay
     )
-    this.eddn_delay_button.grid(padx=BUTTONX, sticky=tk.W)
+    this.eddn_delay_button.grid(row=cur_row, padx=BUTTONX, pady=PADY, sticky=tk.W)
 
     return eddnframe
 
@@ -2167,7 +2214,7 @@ def prefsvarchanged(event=None) -> None:
     this.eddn_system_button['state'] = tk.NORMAL
     # This line will grey out the 'Delay sending ...' option if the 'Send
     #  system and scan data' option is off.
-    this.eddn_delay_button['state'] = this.eddn_system.get() and tk.NORMAL or tk.DISABLED
+    this.eddn_delay_button['state'] = tk.NORMAL if this.eddn_system.get() else tk.DISABLED
 
 
 def prefs_changed(cmdr: str, is_beta: bool) -> None:
@@ -2194,14 +2241,14 @@ def plugin_stop() -> None:
     logger.debug('Done.')
 
 
-def filter_localised(d: Mapping[str, Any]) -> OrderedDictT[str, Any]:
+def filter_localised(d: Mapping[str, Any]) -> dict[str, Any]:
     """
     Recursively remove any dict keys with names ending `_Localised` from a dict.
 
-    :param d: Dict to filter keys of.
+    :param d: dict to filter keys of.
     :return: The filtered dict.
     """
-    filtered: OrderedDictT[str, Any] = OrderedDict()
+    filtered: dict[str, Any] = {}
     for k, v in d.items():
         if k.endswith('_Localised'):
             pass
@@ -2218,14 +2265,14 @@ def filter_localised(d: Mapping[str, Any]) -> OrderedDictT[str, Any]:
     return filtered
 
 
-def capi_filter_localised(d: Mapping[str, Any]) -> OrderedDictT[str, Any]:
+def capi_filter_localised(d: Mapping[str, Any]) -> dict[str, Any]:
     """
     Recursively remove any dict keys for known CAPI 'localised' names.
 
-    :param d: Dict to filter keys of.
+    :param d: dict to filter keys of.
     :return: The filtered dict.
     """
-    filtered: OrderedDictT[str, Any] = OrderedDict()
+    filtered: dict[str, Any] = {}
     for k, v in d.items():
         if EDDN.CAPI_LOCALISATION_RE.search(k):
             pass
@@ -2249,7 +2296,7 @@ def journal_entry(  # noqa: C901, CCR001
         station: str,
         entry: MutableMapping[str, Any],
         state: Mapping[str, Any]
-) -> Optional[str]:
+) -> str | None:
     """
     Process a new Journal entry.
 
@@ -2263,7 +2310,7 @@ def journal_entry(  # noqa: C901, CCR001
     """
     should_return, new_data = killswitch.check_killswitch('plugins.eddn.journal', entry)
     if should_return:
-        plug.show_error(_('EDDN journal handler disabled. See Log.'))  # LANG: Killswitch disabled EDDN
+        plug.show_error(tr.tl('EDDN journal handler disabled. See Log.'))  # LANG: Killswitch disabled EDDN
         return None
 
     should_return, new_data = killswitch.check_killswitch(f'plugins.eddn.journal.event.{entry["event"]}', new_data)
@@ -2324,22 +2371,28 @@ def journal_entry(  # noqa: C901, CCR001
         if event_name == 'fssdiscoveryscan':
             return this.eddn.export_journal_fssdiscoveryscan(cmdr, system, state['StarPos'], is_beta, entry)
 
-        elif event_name == 'navbeaconscan':
+        if event_name == 'navbeaconscan':
             return this.eddn.export_journal_navbeaconscan(cmdr, system, state['StarPos'], is_beta, entry)
 
-        elif event_name == 'codexentry':
+        if event_name == 'codexentry':
             return this.eddn.export_journal_codexentry(cmdr, state['StarPos'], is_beta, entry)
 
-        elif event_name == 'scanbarycentre':
+        if event_name == 'scanbarycentre':
             return this.eddn.export_journal_scanbarycentre(cmdr, state['StarPos'], is_beta, entry)
 
-        elif event_name == 'navroute':
+        if event_name == 'navroute':
             return this.eddn.export_journal_navroute(cmdr, is_beta, entry)
 
-        elif event_name == 'fcmaterials':
+        if event_name == 'fcmaterials':
             return this.eddn.export_journal_fcmaterials(cmdr, is_beta, entry)
 
-        elif event_name == 'approachsettlement':
+        if event_name == "dockingdenied":
+            return this.eddn.export_journal_dockingdenied(cmdr, is_beta, entry)
+
+        if event_name == "dockinggranted":
+            return this.eddn.export_journal_dockinggranted(cmdr, is_beta, entry)
+
+        if event_name == 'approachsettlement':
             # An `ApproachSettlement` can appear *before* `Location` if you
             # logged at one.  We won't have necessary augmentation data
             # at this point, so bail.
@@ -2354,10 +2407,10 @@ def journal_entry(  # noqa: C901, CCR001
                 entry
             )
 
-        elif event_name == 'fsssignaldiscovered':
+        if event_name == 'fsssignaldiscovered':
             this.eddn.enqueue_journal_fsssignaldiscovered(entry)
 
-        elif event_name == 'fssallbodiesfound':
+        if event_name == 'fssallbodiesfound':
             return this.eddn.export_journal_fssallbodiesfound(
                 cmdr,
                 system,
@@ -2366,7 +2419,7 @@ def journal_entry(  # noqa: C901, CCR001
                 entry
             )
 
-        elif event_name == 'fssbodysignals':
+        if event_name == 'fssbodysignals':
             return this.eddn.export_journal_fssbodysignals(
                 cmdr,
                 system,
@@ -2459,7 +2512,7 @@ def journal_entry(  # noqa: C901, CCR001
 
         except requests.exceptions.RequestException as e:
             logger.debug('Failed in send_message', exc_info=e)
-            return _("Error: Can't connect to EDDN")  # LANG: Error while trying to send data to EDDN
+            return tr.tl("Error: Can't connect to EDDN")  # LANG: Error while trying to send data to EDDN
 
         except Exception as e:
             logger.debug('Failed in export_journal_generic', exc_info=e)
@@ -2497,7 +2550,7 @@ def journal_entry(  # noqa: C901, CCR001
 
         except requests.exceptions.RequestException as e:
             logger.debug(f'Failed exporting {entry["event"]}', exc_info=e)
-            return _("Error: Can't connect to EDDN")  # LANG: Error while trying to send data to EDDN
+            return tr.tl("Error: Can't connect to EDDN")  # LANG: Error while trying to send data to EDDN
 
         except Exception as e:
             logger.debug(f'Failed exporting {entry["event"]}', exc_info=e)
@@ -2506,7 +2559,7 @@ def journal_entry(  # noqa: C901, CCR001
     return None
 
 
-def cmdr_data_legacy(data: CAPIData, is_beta: bool) -> Optional[str]:
+def cmdr_data_legacy(data: CAPIData, is_beta: bool) -> str | None:
     """
     Process new CAPI data for Legacy galaxy.
 
@@ -2525,7 +2578,7 @@ def cmdr_data_legacy(data: CAPIData, is_beta: bool) -> Optional[str]:
     return cmdr_data(data, is_beta)
 
 
-def cmdr_data(data: CAPIData, is_beta: bool) -> Optional[str]:  # noqa: CCR001
+def cmdr_data(data: CAPIData, is_beta: bool) -> str | None:  # noqa: CCR001
     """
     Process new CAPI data for not-Legacy galaxy (might be beta).
 
@@ -2551,7 +2604,8 @@ def cmdr_data(data: CAPIData, is_beta: bool) -> Optional[str]:  # noqa: CCR001
             status = this.parent.nametowidget(f".{appname.lower()}.status")
             old_status = status['text']
             if not old_status:
-                status['text'] = _('Sending data to EDDN...')  # LANG: Status text shown while attempting to send data
+                # LANG: Status text shown while attempting to send data
+                status['text'] = tr.tl('Sending data to EDDN...')
                 status.update_idletasks()
 
             this.eddn.export_commodities(data, is_beta)
@@ -2563,7 +2617,7 @@ def cmdr_data(data: CAPIData, is_beta: bool) -> Optional[str]:  # noqa: CCR001
 
         except requests.RequestException as e:
             logger.debug('Failed exporting data', exc_info=e)
-            return _("Error: Can't connect to EDDN")  # LANG: Error while trying to send data to EDDN
+            return tr.tl("Error: Can't connect to EDDN")  # LANG: Error while trying to send data to EDDN
 
         except Exception as e:
             logger.debug('Failed exporting data', exc_info=e)

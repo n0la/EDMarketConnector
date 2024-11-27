@@ -1,24 +1,19 @@
-# type: ignore
+"""Old Configuration Test File."""
+from __future__ import annotations
+
 import numbers
 import sys
 import warnings
 from configparser import NoOptionError
-from os import getenv, makedirs, mkdir, pardir
-from os.path import dirname, expanduser, isdir, join, normpath
-from typing import TYPE_CHECKING, Optional, Union
-
+from os import getenv, makedirs, mkdir
+from os.path import dirname, expanduser, isdir, join
+from typing import TYPE_CHECKING
 from config import applongname, appname, update_interval
 from EDMCLogging import get_main_logger
 
 logger = get_main_logger()
 
-if sys.platform == 'darwin':
-    from Foundation import (  # type: ignore
-        NSApplicationSupportDirectory, NSBundle, NSDocumentDirectory, NSSearchPathForDirectoriesInDomains,
-        NSUserDefaults, NSUserDomainMask
-    )
-
-elif sys.platform == 'win32':
+if sys.platform == 'win32':
     import ctypes
     import uuid
     from ctypes.wintypes import DWORD, HANDLE, HKEY, LONG, LPCVOID, LPCWSTR
@@ -81,7 +76,7 @@ elif sys.platform == 'win32':
     RegDeleteValue.restype = LONG
     RegDeleteValue.argtypes = [HKEY, LPCWSTR]
 
-    def known_folder_path(guid: uuid.UUID) -> Optional[str]:
+    def known_folder_path(guid: uuid.UUID) -> str | None:
         """Look up a Windows GUID to actual folder path name."""
         buf = ctypes.c_wchar_p()
         if SHGetKnownFolderPath(ctypes.create_string_buffer(guid.bytes_le), 0, 0, ctypes.byref(buf)):
@@ -95,7 +90,7 @@ elif sys.platform == 'linux':
     from configparser import RawConfigParser
 
 
-class OldConfig():
+class OldConfig:
     """Object that holds all configuration data."""
 
     OUT_EDDN_SEND_STATION_DATA = 1
@@ -114,95 +109,10 @@ class OldConfig():
     OUT_EDDN_DELAY = 4096
     OUT_STATION_ANY = OUT_EDDN_SEND_STATION_DATA | OUT_MKT_TD | OUT_MKT_CSV
 
-    if sys.platform == 'darwin':  # noqa: C901 # It's gating *all* the functions
+    if sys.platform == 'win32':  # noqa: C901
 
         def __init__(self):
-            self.app_dir = join(
-                NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True)[0], appname
-            )
-            if not isdir(self.app_dir):
-                mkdir(self.app_dir)
-
-            self.plugin_dir = join(self.app_dir, 'plugins')
-            if not isdir(self.plugin_dir):
-                mkdir(self.plugin_dir)
-
-            if getattr(sys, 'frozen', False):
-                self.internal_plugin_dir = normpath(join(dirname(sys.executable), pardir, 'Library', 'plugins'))
-                self.respath = normpath(join(dirname(sys.executable), pardir, 'Resources'))
-                self.identifier = NSBundle.mainBundle().bundleIdentifier()
-
-            else:
-                self.internal_plugin_dir = join(dirname(__file__), 'plugins')
-                self.respath = dirname(__file__)
-                # Don't use Python's settings if interactive
-                self.identifier = f'uk.org.marginal.{appname.lower()}'
-                NSBundle.mainBundle().infoDictionary()['CFBundleIdentifier'] = self.identifier
-
-            self.default_journal_dir: str | None = join(
-                NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True)[0],
-                'Frontier Developments',
-                'Elite Dangerous'
-            )
-            self.home = expanduser('~')
-
-            self.defaults = NSUserDefaults.standardUserDefaults()
-            self.settings = dict(self.defaults.persistentDomainForName_(self.identifier) or {})  # make writeable
-
-            # Check out_dir exists
-            if not self.get('outdir') or not isdir(str(self.get('outdir'))):
-                self.set('outdir', NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, True)[0])
-
-        def get(self, key: str, default: Union[None, list, str] = None) -> Union[None, list, str]:
-            """Look up a string configuration value."""
-            val = self.settings.get(key)
-            if val is None:
-                return default
-
-            elif isinstance(val, str):
-                return str(val)
-
-            elif isinstance(val, list):
-                return list(val)  # make writeable
-
-            else:
-                return default
-
-        def getint(self, key: str, default: int = 0) -> int:
-            """Look up an integer configuration value."""
-            try:
-                return int(self.settings.get(key, default))  # should already be int, but check by casting
-
-            except ValueError as e:
-                logger.error(f"Failed to int({key=})", exc_info=e)
-                return default
-
-            except Exception as e:
-                logger.debug('The exception type is ...', exc_info=e)
-                return default
-
-        def set(self, key: str, val: Union[int, str, list]) -> None:
-            """Set value on the specified configuration key."""
-            self.settings[key] = val
-
-        def delete(self, key: str) -> None:
-            """Delete the specified configuration key."""
-            self.settings.pop(key, None)
-
-        def save(self) -> None:
-            """Save current configuration to disk."""
-            self.defaults.setPersistentDomain_forName_(self.settings, self.identifier)
-            self.defaults.synchronize()
-
-        def close(self) -> None:
-            """Close the configuration."""
-            self.save()
-            self.defaults = None
-
-    elif sys.platform == 'win32':
-
-        def __init__(self):
-            self.app_dir = join(known_folder_path(FOLDERID_LocalAppData), appname)  # type: ignore # Not going to change
+            self.app_dir = join(known_folder_path(FOLDERID_LocalAppData), appname)  # type: ignore
             if not isdir(self.app_dir):
                 mkdir(self.app_dir)
 
@@ -279,10 +189,10 @@ class OldConfig():
                 RegSetValueEx(sparklekey, 'UpdateInterval', 0, 1, buf, len(buf) * 2)
                 RegCloseKey(sparklekey)
 
-            if not self.get('outdir') or not isdir(self.get('outdir')):  # type: ignore # Not going to change
+            if not self.get('outdir') or not isdir(self.get('outdir')):  # type: ignore
                 self.set('outdir', known_folder_path(FOLDERID_Documents) or self.home)
 
-        def get(self, key: str, default: Union[None, list, str] = None) -> Union[None, list, str]:
+        def get(self, key: str, default: None | list | str = None) -> None | list | str:
             """Look up a string configuration value."""
             key_type = DWORD()
             key_size = DWORD()
@@ -296,7 +206,7 @@ class OldConfig():
                         None,
                         ctypes.byref(key_size)
                     )
-                    or key_type.value not in [REG_SZ, REG_MULTI_SZ]
+                    or key_type.value not in (REG_SZ, REG_MULTI_SZ)
             ):
                 return default
 
@@ -304,11 +214,10 @@ class OldConfig():
             if RegQueryValueEx(self.hkey, key, 0, ctypes.byref(key_type), buf, ctypes.byref(key_size)):
                 return default
 
-            elif key_type.value == REG_MULTI_SZ:
+            if key_type.value == REG_MULTI_SZ:
                 return list(ctypes.wstring_at(buf, len(buf)-2).split('\x00'))
 
-            else:
-                return str(buf.value)
+            return str(buf.value)
 
         def getint(self, key: str, default: int = 0) -> int:
             """Look up an integer configuration value."""
@@ -328,10 +237,9 @@ class OldConfig():
             ):
                 return default
 
-            else:
-                return key_val.value
+            return key_val.value
 
-        def set(self, key: str, val: Union[int, str, list]) -> None:
+        def set(self, key: str, val: int | str | list) -> None:
             """Set value on the specified configuration key."""
             if isinstance(val, str):
                 buf = ctypes.create_unicode_buffer(val)
@@ -388,7 +296,7 @@ class OldConfig():
 
             self.config = RawConfigParser(comment_prefixes=('#',))
             try:
-                with codecs.open(self.filename, 'r') as h:
+                with codecs.open(self.filename) as h:
                     self.config.read_file(h)
 
             except Exception as e:
@@ -398,7 +306,7 @@ class OldConfig():
             if not self.get('outdir') or not isdir(self.get('outdir')):  # type: ignore # Not going to change
                 self.set('outdir', expanduser('~'))
 
-        def get(self, key: str, default: Union[None, list, str] = None) -> Union[None, list, str]:
+        def get(self, key: str, default: None | list | str = None) -> None | list | str:
             """Look up a string configuration value."""
             try:
                 val = self.config.get(self.SECTION, key)
@@ -407,8 +315,7 @@ class OldConfig():
                     # so we add a spurious ';' entry in set() and remove it here
                     assert val.split('\n')[-1] == ';', val.split('\n')
                     return [self._unescape(x) for x in val.split('\n')[:-1]]
-                else:
-                    return self._unescape(val)
+                return self._unescape(val)
 
             except NoOptionError:
                 logger.debug(f'attempted to get key {key} that does not exist')
@@ -434,13 +341,13 @@ class OldConfig():
 
             return default
 
-        def set(self, key: str, val: Union[int, str, list]) -> None:
+        def set(self, key: str, val: int | str | list) -> None:
             """Set value on the specified configuration key."""
             if isinstance(val, bool):
-                self.config.set(self.SECTION, key, val and '1' or '0')  # type: ignore # Not going to change
+                self.config.set(self.SECTION, key, val and '1' or '0')
 
-            elif isinstance(val, str) or isinstance(val, numbers.Integral):
-                self.config.set(self.SECTION, key, self._escape(val))  # type: ignore # Not going to change
+            elif isinstance(val, (numbers.Integral, str)):
+                self.config.set(self.SECTION, key, self._escape(val))
 
             elif isinstance(val, list):
                 self.config.set(self.SECTION, key, '\n'.join([self._escape(x) for x in val] + [';']))
@@ -460,7 +367,7 @@ class OldConfig():
         def close(self) -> None:
             """Close the configuration."""
             self.save()
-            self.config = None
+            self.config = None  # type: ignore
 
         def _escape(self, val: str) -> str:
             """Escape a string for storage."""

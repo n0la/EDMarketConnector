@@ -1,39 +1,43 @@
-"""Code dealing with ship outfitting."""
+"""
+outfitting.py - Code dealing with ship outfitting.
 
-import pickle
-from collections import OrderedDict
-from os.path import join
-from typing import Optional
-from typing import OrderedDict as OrderedDictT
+Copyright (c) EDCD, All Rights Reserved
+Licensed under the GNU General Public License.
+See LICENSE file.
+"""
+from __future__ import annotations
 
+import json
 from config import config
-from edmc_data import outfitting_armour_map as armour_map
-from edmc_data import outfitting_cabin_map as cabin_map
-from edmc_data import outfitting_corrosion_rating_map as corrosion_rating_map
-from edmc_data import outfitting_countermeasure_map as countermeasure_map
-from edmc_data import outfitting_fighter_rating_map as fighter_rating_map
-from edmc_data import outfitting_internal_map as internal_map
-from edmc_data import outfitting_misc_internal_map as misc_internal_map
-from edmc_data import outfitting_missiletype_map as missiletype_map
-from edmc_data import outfitting_planet_rating_map as planet_rating_map
-from edmc_data import outfitting_rating_map as rating_map
-from edmc_data import outfitting_standard_map as standard_map
-from edmc_data import outfitting_utility_map as utility_map
-from edmc_data import outfitting_weapon_map as weapon_map
-from edmc_data import outfitting_weaponclass_map as weaponclass_map
-from edmc_data import outfitting_weaponmount_map as weaponmount_map
-from edmc_data import outfitting_weaponoldvariant_map as weaponoldvariant_map
-from edmc_data import outfitting_weaponrating_map as weaponrating_map
-from edmc_data import ship_name_map
+from edmc_data import (
+    outfitting_armour_map as armour_map,
+    outfitting_cabin_map as cabin_map,
+    outfitting_corrosion_rating_map as corrosion_rating_map,
+    outfitting_countermeasure_map as countermeasure_map,
+    outfitting_fighter_rating_map as fighter_rating_map,
+    outfitting_internal_map as internal_map,
+    outfitting_misc_internal_map as misc_internal_map,
+    outfitting_missiletype_map as missiletype_map,
+    outfitting_planet_rating_map as planet_rating_map,
+    outfitting_rating_map as rating_map,
+    outfitting_standard_map as standard_map,
+    outfitting_utility_map as utility_map,
+    outfitting_weapon_map as weapon_map,
+    outfitting_weaponclass_map as weaponclass_map,
+    outfitting_weaponmount_map as weaponmount_map,
+    outfitting_weaponoldvariant_map as weaponoldvariant_map,
+    outfitting_weaponrating_map as weaponrating_map,
+    ship_name_map,
+)
 from EDMCLogging import get_main_logger
 
 logger = get_main_logger()
 
 # Module mass, FSD data etc
-moduledata: OrderedDictT = OrderedDict()
+moduledata: dict = {}
 
 
-def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, CCR001
+def lookup(module, ship_map, entitled=False) -> dict | None:  # noqa: C901, CCR001
     """
     Produce a standard dict description of the given module.
 
@@ -51,7 +55,8 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
     """
     # Lazily populate
     if not moduledata:
-        moduledata.update(pickle.load(open(join(config.respath_path, 'modules.p'),  'rb')))
+        modules_path = config.respath_path / "modules.json"
+        moduledata.update(json.loads(modules_path.read_text()))
 
     if not module.get('name'):
         raise AssertionError(f'{module["id"]}')
@@ -61,15 +66,18 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
 
     # Armour - e.g. Federation_Dropship_Armour_Grade2
     if name[-2] == 'armour':
-        name = module['name'].lower().rsplit('_', 2)  # Armour is ship-specific, and ship names can have underscores
+        # Armour is ship-specific, and ship names can have underscores
+        ship_name, armour, armour_grade = module["name"].lower().rsplit("_", 2)[0:3]
+        if ship_name not in ship_map:
+            raise AssertionError(f"Unknown ship: {ship_name}")
         new['category'] = 'standard'
-        new['name'] = armour_map[name[2]]
-        new['ship'] = ship_map[name[0]]  # Generate error on unknown ship
+        new["name"] = armour_map[armour_grade]
+        new["ship"] = ship_map[ship_name]
         new['class'] = '1'
         new['rating'] = 'I'
 
     # Skip uninteresting stuff - some no longer present in ED 3.1 cAPI data
-    elif (name[0] in [
+    elif (name[0] in (
                       'bobble',
                       'decal',
                       'nameplate',
@@ -77,7 +85,7 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
                       'enginecustomisation',
                       'voicepack',
                       'weaponcustomisation'
-                     ]
+                     )
             or name[1].startswith('shipkit')):
         return None
 
@@ -89,6 +97,12 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
     # Don't report Planetary Approach Suite in outfitting
     elif not entitled and name[1] == 'planetapproachsuite':
         return None
+
+    # V2 Shutdown Field Neutralizer - Hpt_AntiUnknownShutdown_Tiny_V2
+    elif name[0] == 'hpt' and name[1] in countermeasure_map and len(name) == 4 and name[3] == 'v2':
+        new['category'] = 'utility'
+        new['name'], new['rating'] = countermeasure_map[name[1]]
+        new['class'] = weaponclass_map[name[-2]]
 
     # Countermeasures - e.g. Hpt_PlasmaPointDefence_Turret_Tiny
     elif name[0] == 'hpt' and name[1] in countermeasure_map:
@@ -171,12 +185,18 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
         if name[1] == 'dronecontrol':  # e.g. Int_DroneControl_Collection_Size1_Class1
             name.pop(0)
 
+        elif name[1] == 'multidronecontrol':  # e.g. Int_MultiDroneControl_Rescue_Size3_Class3
+            name.pop(0)
+
         elif name[-1] == 'free':  # Starter Sidewinder or Freagle modules - just treat them like vanilla modules
             name.pop()
 
         if name[1] in standard_map:  # e.g. Int_Engine_Size2_Class1, Int_ShieldGenerator_Size8_Class5_Strong
             new['category'] = 'standard'
-            new['name'] = standard_map[len(name) > 4 and (name[1], name[4]) or name[1]]
+            if name[2] == 'overcharge':
+                new['name'] = standard_map[(name[1], name[2])]
+            else:
+                new['name'] = standard_map[len(name) > 4 and (name[1], name[4]) or name[1]]
 
         elif name[1] in internal_map:  # e.g. Int_CargoRack_Size8_Class1
             new['category'] = 'internal'
@@ -195,11 +215,14 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
         elif len(name) < 4 and name[1] == 'resourcesiphon':  # Hack! 128066402 has no size or class.
             (new['class'], new['rating']) = ('1', 'I')
 
-        elif len(name) < 4 and name[1] in ['guardianpowerdistributor', 'guardianpowerplant']:  # Hack! No class.
+        elif len(name) < 4 and name[1] in ('guardianpowerdistributor', 'guardianpowerplant'):  # Hack! No class.
             (new['class'], new['rating']) = (str(name[2][4:]), 'A')
 
-        elif len(name) < 4 and name[1] in ['guardianfsdbooster']:  # Hack! No class.
+        elif len(name) < 4 and name[1] == 'guardianfsdbooster':  # Hack! No class.
             (new['class'], new['rating']) = (str(name[2][4:]), 'H')
+
+        elif len(name) > 4 and name[1] == 'hyperdrive':  # e.g. Int_Hyperdrive_Overcharge_Size6_Class3
+            (new['class'], new['rating']) = (str(name[3][-1:]), rating_map[name[4][-1:]])
 
         else:
             if len(name) < 3:
@@ -219,10 +242,7 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
         new['enabled'], new['priority'] = module['on'], module['priority']  # priority is zero-based
 
     # Entitlements
-    if not module.get('sku'):
-        pass
-
-    else:
+    if module.get('sku'):
         new['entitlement'] = module['sku']
 
     # Extra module data
@@ -237,7 +257,7 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
         if not m:
             print(f'No data for module {key}')
 
-        elif new['name'] == 'Frame Shift Drive':
+        elif new['name'] == 'Frame Shift Drive' or new['name'] == 'Frame Shift Drive (SCO)':
             assert 'mass' in m and 'optmass' in m and 'maxfuel' in m and 'fuelmul' in m and 'fuelpower' in m, m
 
         else:
@@ -245,10 +265,11 @@ def lookup(module, ship_map, entitled=False) -> Optional[dict]:  # noqa: C901, C
 
     new.update(moduledata.get(module['name'].lower(), {}))
 
-    # check we've filled out mandatory fields
-    for thing in ['id', 'symbol', 'category', 'name', 'class', 'rating']:  # Don't consider mass etc as mandatory
-        if not new.get(thing):
-            raise AssertionError(f'{module["id"]}: failed to set {thing}')
+    # Check we've filled out mandatory fields
+    mandatory_fields = ["id", "symbol", "category", "name", "class", "rating"]
+    for field in mandatory_fields:
+        if not new.get(field):
+            raise AssertionError(f'{module["id"]}: failed to set {field}')
 
     if new['category'] == 'hardpoint' and not new.get('mount'):
         raise AssertionError(f'{module["id"]}: failed to set mount')
@@ -263,15 +284,15 @@ def export(data, filename) -> None:
     :param data: CAPI data to export.
     :param filename: Filename to export into.
     """
-    assert data['lastSystem'].get('name')
-    assert data['lastStarport'].get('name')
+    assert "name" in data["lastSystem"]
+    assert "name" in data["lastStarport"]
 
     header = 'System,Station,Category,Name,Mount,Guidance,Ship,Class,Rating,FDevID,Date\n'
     rowheader = f'{data["lastSystem"]["name"]},{data["lastStarport"]["name"]}'
 
     with open(filename, 'wt') as h:
         h.write(header)
-        for v in list(data['lastStarport'].get('modules', {}).values()):
+        for v in data["lastStarport"].get("modules", {}).values():
             try:
                 m = lookup(v, ship_name_map)
                 if m:

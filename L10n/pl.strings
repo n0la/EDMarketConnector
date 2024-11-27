@@ -1,3 +1,11 @@
+/* edsm.py:Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:316; */
+"Send flight log and CMDR status to EDSM" = "Wyślij flight log i status gracza do EDSM";
+
+/* prefs.py:Label on button used to open a filesystem folder; In files: prefs.py:706; */
+"Open Log Folder" = "Otwórz folder z zapisami z logów";
+
+/* inara.py:Text Inara Show API key; In files: inara.py:305; */
+"Show API Key" = "Pokaż klucz API";
 /* Language name */
 "!Language" = "Polski";
 
@@ -70,12 +78,6 @@
 /* EDMarketConnector.py: 'Edit' menu title on OSX; EDMarketConnector.py: 'Edit' menu title; In files: EDMarketConnector.py:922; EDMarketConnector.py:940; EDMarketConnector.py:943; */
 "Edit" = "Edycja";
 
-/* EDMarketConnector.py: 'View' menu title on OSX; In files: EDMarketConnector.py:923; */
-"View" = "Widok";
-
-/* EDMarketConnector.py: 'Window' menu title on OSX; In files: EDMarketConnector.py:924; */
-"Window" = "Okno";
-
 /* EDMarketConnector.py: Help' menu title on OSX; EDMarketConnector.py: 'Help' menu title; In files: EDMarketConnector.py:925; EDMarketConnector.py:941; EDMarketConnector.py:944; */
 "Help" = "Pomoc";
 
@@ -94,6 +96,12 @@
 /* EDMarketConnector.py: Help > Documentation; In files: EDMarketConnector.py:933; EDMarketConnector.py:953; */
 "Documentation" = "Dokumentacja";
 
+/* EDMarketConnector.py: Help > Troubleshooting; In files: EDMarketConnector.py:934; EDMarketConnector.py:954; */
+"Troubleshooting" = "Rozwiązywanie problemów";
+
+/* EDMarketConnector.py: Help > Report A Bug; In files: EDMarketConnector.py:935; EDMarketConnector.py:955; */
+"Report A Bug" = "Zgłoś błąd";
+
 /* EDMarketConnector.py: Help > Privacy Policy; In files: EDMarketConnector.py:936; EDMarketConnector.py:956; */
 "Privacy Policy" = "Polityka prywatności";
 
@@ -108,6 +116,9 @@
 
 /* EDMarketConnector.py: Label for 'Copy' as in 'Copy and Paste'; ttkHyperlinkLabel.py: Label for 'Copy' as in 'Copy and Paste'; In files: EDMarketConnector.py:962; ttkHyperlinkLabel.py:53; */
 "Copy" = "Kopiuj";
+
+/* EDMarketConnector.py: CAPI auth aborted because of killswitch; EDMarketConnector.py: CAPI auth query aborted because of killswitch; In files: EDMarketConnector.py:973; EDMarketConnector.py:1067; */
+"CAPI auth disabled by killswitch" = "Autoryzacja CAPI wyłączona \"kill switchem\".";
 
 /* EDMarketConnector.py: Status - Attempting to get a Frontier Auth Access Token; In files: EDMarketConnector.py:978; */
 "Logging in..." = "Logowanie...";
@@ -130,6 +141,9 @@
 /* EDMarketConnector.py: CAPI queries aborted because game mode unknown; In files: EDMarketConnector.py:1083; */
 "CAPI query aborted: Game mode unknown" = "Zapytanie CAPI anulowane: tryb gry nieznany";
 
+/* EDMarketConnector.py: CAPI queries aborted because GameVersion unknown; EDMarketConnector.py: CAPI fleetcarrier query aborted because GameVersion unknown; In files: EDMarketConnector.py:1089; EDMarketConnector.py:1170; */
+"CAPI query aborted: GameVersion unknown" = "Zapytanie CAPI anulowane: wersja gry nieznana";
+
 /* EDMarketConnector.py: CAPI queries aborted because current star system name unknown; In files: EDMarketConnector.py:1095; */
 "CAPI query aborted: Current system unknown" = "Zapytanie CAPI anulowane: obecny system nieznany";
 
@@ -141,6 +155,9 @@
 
 /* EDMarketConnector.py: Status - Attempting to retrieve data from Frontier CAPI; In files: EDMarketConnector.py:1128; EDMarketConnector.py:1179; */
 "Fetching data..." = "Pobieranie danych...";
+
+/* EDMarketConnector.py: CAPI fleetcarrier query aborted because of killswitch; In files: EDMarketConnector.py:1157; */
+"CAPI fleetcarrier disabled by killswitch" = "Fleetcarier CAPI wyłączony \"kill switchem\"";
 
 /* EDMarketConnector.py: No data was returned for the commander from the Frontier CAPI; In files: EDMarketConnector.py:1242; */
 "CAPI: No commander data returned" = "CAPI: Nie zwrócono danych dowódcy";
@@ -190,6 +207,24 @@
 /* EDMarketConnector.py: Popup window title for list of 'enabled' plugins that don't work with Python 3.x; In files: EDMarketConnector.py:2274; */
 "EDMC: Plugins Without Python 3.x Support" = "EDMC: Pluginy Nie Wspierające Python 3.x";
 
+/* EDMarketConnector.py: Popup window title for list of 'broken' plugins that failed to load; In files: EDMarketConnector.py:2285; */
+"EDMC: Broken Plugins" = "EDMC: Uszkodzone pluginy";
+
+/* EDMarketConnector.py: Popup-text about 'broken' plugins that failed to load; In files: EDMarketConnector.py:2266; */
+"One or more of your enabled plugins failed to load. Please see the list on the '{PLUGINS}' tab of '{FILE}' > '{SETTINGS}'. This could be caused by a wrong folder structure. The load.py file should be located under plugins/PLUGIN_NAME/load.py.\r\n\r\nYou can disable a plugin by renaming its folder to have '{DISABLED}' on the end of the name." = "Jeden lub więcej plugin nie został załadowany. Sprawdź listę na zakładce '{PLUGINS}' w menu '{FILE}' > '{SETTINGS}'. Może to być spowodowane błedną strukturą katalogów. Plik load.py powinien być umiezczony w plugins/NAZWA PLUGINA/load.py.\n\nMożesz wyłączyć plugin zmieniając nazwę jego folderu tak, aby zawierała '{DISABLED}' na końcu nazwy.";
+
+/* EDMarketConnector.py: Popup-text about Reset Providers; In files: EDMarketConnector.py:2146; */
+"One or more of your URL Providers were invalid, and have been reset:\r\n\r\n" = "Jeden lub więcej adres URL jest błędny i został zresetowany:\n";
+
+/* EDMarketConnector.py: Text About What Provider Was Reset; In files: EDMarketConnector.py:2148; */
+"{PROVIDER} was set to {OLDPROV}, and has been reset to {NEWPROV}\r\n" = "{PROVIDER} ustawiony na {OLDPROV} i został zresetowany do {NEWPROV}\n";
+
+/* EDMarketConnector.py: Popup window title for Reset Providers; In files: EDMarketConnector.py:2161; */
+"EDMC: Default Providers Reset" = "EDMC: Dostawca domyślny zresetowany";
+
+/* EDMarketConnector.py: Await Full CMDR Login to Game; In files: EDMarketConnector.py:813; */
+"Awaiting Full CMDR Login" = "Oczekiwanie na pełne zalogowanie do gry";
+
 /* journal_lock.py: Title text on popup when Journal directory already locked; In files: journal_lock.py:208; */
 "Journal directory already locked" = "Katalog dziennika zablokowany";
 
@@ -205,13 +240,13 @@
 /* l10n.py: The system default language choice in Settings > Appearance; prefs.py: Settings > Configuration - Label on 'reset journal files location to default' button; prefs.py: The system default language choice in Settings > Appearance; prefs.py: Label for 'Default' theme radio button; In files: l10n.py:193; prefs.py:455; prefs.py:709; prefs.py:742; */
 "Default" = "Domyślne";
 
-/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:74; coriolis.py:77; coriolis.py:123; coriolis.py:139; coriolis.py:145; */
+/* coriolis.py: 'Auto' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - auto; In files: coriolis.py:48; coriolis.py:74; coriolis.py:77; coriolis.py:94; coriolis.py:123; coriolis.py:139; coriolis.py:145; coriolis.py:179; coriolis.py:182; */
 "Auto" = "Auto";
 
-/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:75; coriolis.py:121; coriolis.py:137; */
+/* coriolis.py: 'Normal' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - normal; In files: coriolis.py:49; coriolis.py:75; coriolis.py:95; coriolis.py:121; coriolis.py:137; coriolis.py:180; */
 "Normal" = "Normalny";
 
-/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:76; coriolis.py:122; coriolis.py:138; */
+/* coriolis.py: 'Beta' label for Coriolis site override selection; coriolis.py: Coriolis normal/beta selection - beta; In files: coriolis.py:50; coriolis.py:76; coriolis.py:96; coriolis.py:122; coriolis.py:138; coriolis.py:181; */
 "Beta" = "Beta";
 
 /* coriolis.py: Settings>Coriolis: Help/hint for changing coriolis URLs; In files: coriolis.py:91:93; */
@@ -254,13 +289,10 @@
 "Delay sending until docked" = "Czekaj z wysłaniem na zadokowanie";
 
 /* eddn.py: Killswitch disabled EDDN; In files: eddn.py:2178; */
-"EDDN journal handler disabled. See Log." = "Wyłączona obsługa dziennika EDDN. Sprawdź logi.";
+"EDDN journal handler disabled. See Log." = "Wyłączona obsługa dziennika EDDB. Sprawdź logi.";
 
 /* eddn.py: Status text shown while attempting to send data; In files: eddn.py:2507; */
 "Sending data to EDDN..." = "Wysłanie danych do EDDN...";
-
-/* edsm.py: Settings>EDSM - Label on checkbox for 'send data'; In files: edsm.py:308; */
-"Send flight log and Cmdr status to EDSM" = "Wyślij zapis lotu i status pilota do EDSM";
 
 /* edsm.py: Settings>EDSM - Label on header/URL to EDSM API key page; In files: edsm.py:319; */
 "Elite Dangerous Star Map credentials" = "Dane uwierzytelniające Elite Dangerous Star Map";
@@ -275,7 +307,10 @@
 "None" = "Brak";
 
 /* edsm.py: EDSM plugin - Journal handling disabled by killswitch; In files: edsm.py:516; */
-"EDSM Handler disabled. See Log." = "Wyłączona obsługa EDSM. Sprawdź logi.";
+"EDSM Handler disabled. See Log." = "Wyłączona obsługa EDDB. Sprawdź logi.";
+
+/* edsm.py: EDSM - Only Live data; In files: edsm.py:632; */
+"EDSM only accepts Live galaxy data" = "EDSM przyjmuje tylko dane z aktualnej rozgrywki";
 
 /* edsm.py: EDSM Plugin - Error message from EDSM API; In files: edsm.py:916; edsm.py:1048; */
 "Error: EDSM {MSG}" = "Błąd: EDSM {MSG}";
@@ -289,14 +324,14 @@
 /* inara.py: Text for INARA API keys link ( goes to https://inara.cz/settings-api ); In files: inara.py:269; */
 "Inara credentials" = "Inara - uprawnienia";
 
+/* inara.py: The Inara API only accepts Live galaxy data, not Legacy galaxy data; inara.py: Inara - Only Live data; In files: inara.py:384; inara.py:386; */
+"Inara only accepts Live galaxy data" = "Inara przyjmuje tylko dane z aktualnej rozgrywki";
+
 /* inara.py: INARA support disabled via killswitch; In files: inara.py:395; */
 "Inara disabled. See Log." = "Inara jest wyłączona. Sprawdź logi.";
 
 /* inara.py: INARA API returned some kind of error (error message will be contained in {MSG}); In files: inara.py:1650; inara.py:1663; */
 "Error: Inara {MSG}" = "Błąd: Inara {MSG}";
-
-/* prefs.py: File > Preferences menu entry for macOS; In files: prefs.py:237; */
-"Preferences" = "Preferencje";
 
 /* prefs.py: Settings > Output - choosing what data to save to files; In files: prefs.py:335; */
 "Please choose what data to save" = "Jakie dane zapisywać";
@@ -316,9 +351,6 @@
 /* prefs.py: Settings > Output - Label for "where files are located"; In files: prefs.py:379; prefs.py:398; */
 "File location" = "Położenie pliku";
 
-/* prefs.py: macOS Preferences - files location selection button; In files: prefs.py:387; prefs.py:437; */
-"Change..." = "Zmień...";
-
 /* prefs.py: NOT-macOS Settings - files location selection button; prefs.py: NOT-macOS Setting - files location selection button; In files: prefs.py:390; prefs.py:440; */
 "Browse..." = "Przeglądaj...";
 
@@ -328,20 +360,11 @@
 /* prefs.py: Settings > Configuration - Label for Journal files location; In files: prefs.py:431; prefs.py:446; */
 "E:D journal file location" = "E:D Lokacja pliku dziennika";
 
-/* prefs.py: Hotkey/Shortcut settings prompt on OSX; In files: prefs.py:490; */
-"Keyboard shortcut" = "Skrót klawiaturowy";
+/* prefs.py: Settings > Configuration - Label for CAPI section; In files: prefs.py:469; */
+"CAPI Settings" = "Ustawienia CAPI";
 
 /* prefs.py: Hotkey/Shortcut settings prompt on Windows; In files: prefs.py:492; */
 "Hotkey" = "Skr. Klaw.";
-
-/* prefs.py: macOS Preferences > Configuration - restart the app message; In files: prefs.py:501; */
-"Re-start {APP} to use shortcuts" = "Zrestartuj {APP} by użyć{CR}skrótu klawiszowego.";
-
-/* prefs.py: macOS - Configuration - need to grant the app permission for keyboard shortcuts; In files: prefs.py:510; */
-"{APP} needs permission to use shortcuts" = "{APP} wymaga uprawnień by{CR}móc korzystać ze skrótów klawiszowych.";
-
-/* prefs.py: Shortcut settings button on OSX; In files: prefs.py:515; */
-"Open System Preferences" = "Otwórz Preferencje systemowe";
 
 /* prefs.py: Configuration - Act on hotkey only when ED is in foreground; In files: prefs.py:538; */
 "Only when Elite: Dangerous is the active app" = "Tylko gdy Elite: Dangerous jest aplikacją aktywną";
@@ -418,9 +441,6 @@
 /* prefs.py: Label for location of third-party plugins folder; In files: prefs.py:908; */
 "Plugins folder" = "Folder pluginów";
 
-/* prefs.py: Label on button used to open a filesystem folder; In files: prefs.py:915; */
-"Open" = "Otwórz";
-
 /* prefs.py: Tip/label about how to disable plugins; In files: prefs.py:923; */
 "Tip: You can disable a plugin by{CR}adding '{EXT}' to its folder name" = "Wskazówka: Możesz wyłączyć pluginy{CR}dodając '{EXT}' do nazwy folderu";
 
@@ -428,10 +448,13 @@
 "Enabled Plugins" = "Włączone pluginy";
 
 /* prefs.py: Plugins - Label for list of 'enabled' plugins that don't work with Python 3.x; In files: prefs.py:954; */
-"Plugins Without Python 3.x Support:" = "Pluginy nie obsługiwane przez Python 3.x:";
+"Plugins Without Python 3.x Support" = "Pluginy nie wspierające Python 3.x";
 
 /* prefs.py: Plugins - Label on URL to documentation about migrating plugins from Python 2.7; In files: prefs.py:962; */
 "Information on migrating plugins" = "Informacja o migracji pluginów";
+
+/* prefs.py: Plugins - Label for list of 'broken' plugins that failed to load; In files: prefs.py:1039; */
+"Broken Plugins" = "Niedziałające pluginy";
 
 /* prefs.py: Lable on list of user-disabled plugins; In files: prefs.py:977; */
 "Disabled Plugins" = "Pluginy wyłączone";
@@ -735,3 +758,7 @@
 
 /* stats.py: Status dialog title; In files: stats.py:418; */
 "Ships" = "Statki";
+
+/* update.py: Update Available Text; In files: update.py:229; */
+"{NEWVER} is available" = "Dostępna nowa wersja {NEWVER}";
+

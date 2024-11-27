@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-"""Command-line interface. Requires prior setup through the GUI."""
+"""
+EDMC.py - Command-line interface. Requires prior setup through the GUI.
 
+Copyright (c) EDCD, All Rights Reserved
+Licensed under the GNU General Public License.
+See LICENSE file.
+"""
+from __future__ import annotations
 
 import argparse
 import json
@@ -8,29 +14,27 @@ import locale
 import os
 import queue
 import sys
-from os.path import getmtime
 from time import sleep, time
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any
 
 # isort: off
-
 os.environ["EDMC_NO_UI"] = "1"
 
 # See EDMCLogging.py docs.
 # workaround for https://github.com/EDCD/EDMarketConnector/issues/568
 from EDMCLogging import edmclogger, logger, logging
+
 if TYPE_CHECKING:
     from logging import TRACE  # type: ignore # noqa: F401 # needed to make mypy happy
 
 edmclogger.set_channels_loglevel(logging.INFO)
 
 # isort: on
-
 import collate
 import commodity
 import companion
 import edshipyard
-import l10n
+from l10n import translations as tr
 import loadout
 import outfitting
 import shipyard
@@ -38,13 +42,15 @@ import stats
 from commodity import COMMODITY_DEFAULT
 from config import appcmdname, appversion, config
 from monitor import monitor
-from update import EDMCVersion, Updater
+from update import EDMCVersion, Updater, check_for_fdev_updates
 
 sys.path.append(config.internal_plugin_dir)
 # This import must be after the sys.path.append.
 # The sys.path.append has to be after `import sys` and `from config import config`
 # isort: off
 import eddn  # noqa: E402
+
+
 # isort: on
 
 
@@ -59,14 +65,14 @@ Locale LC_TIME: {locale.getlocale(locale.LC_TIME)}'''
                  )
 
 
-l10n.Translations.install_dummy()
+tr.install_dummy()
 
 SERVER_RETRY = 5  # retry pause for Companion servers [s]
 EXIT_SUCCESS, EXIT_SERVER, EXIT_CREDENTIALS, EXIT_VERIFICATION, EXIT_LAGGING, EXIT_SYS_ERR, EXIT_ARGS, \
     EXIT_JOURNAL_READ_ERR, EXIT_COMMANDER_UNKNOWN = range(9)
 
 
-def versioncmp(versionstring) -> List:
+def versioncmp(versionstring) -> list:
     """Quick and dirty version comparison assuming "strict" numeric only version numbers."""
     return list(map(int, versionstring.split('.')))
 
@@ -98,9 +104,7 @@ def deep_get(target: dict | companion.CAPIData, *args: str, default=None) -> Any
         res = current.get(arg)
         if res is None:
             return default
-
         current = res
-
     return current
 
 
@@ -155,16 +159,17 @@ def main():  # noqa: C901, CCR001
         args = parser.parse_args()
 
         if args.version:
-            updater = Updater(provider='internal')
-            newversion: Optional[EDMCVersion] = updater.check_appcast()
+            updater = Updater()
+            newversion: EDMCVersion | None = updater.check_appcast()
             if newversion:
-                print(f'{appversion()} ({newversion.title!r} is available)')
+                # LANG: Update Available Text
+                newverstr: str = tr.tl("{NEWVER} is available").format(NEWVER=newversion.title)
+                print(f'{appversion()} ({newverstr})')
             else:
                 print(appversion())
-
             return
 
-        level_to_set: Optional[int] = None
+        level_to_set: int | None = None
         if args.trace or args.trace_on:
             level_to_set = logging.TRACE  # type: ignore # it exists
             logger.info('Setting TRACE level debugging due to either --trace or a --trace-on')
@@ -185,10 +190,10 @@ def main():  # noqa: C901, CCR001
 
         logger.debug(f'Startup v{appversion()} : Running on Python v{sys.version}')
         logger.debug(f'''Platform: {sys.platform}
-argv[0]: {sys.argv[0]}
-exec_prefix: {sys.exec_prefix}
-executable: {sys.executable}
-sys.path: {sys.path}'''
+                    argv[0]: {sys.argv[0]}
+                    exec_prefix: {sys.exec_prefix}
+                    executable: {sys.executable}
+                    sys.path: {sys.path}'''
                      )
         if args.trace_on and len(args.trace_on) > 0:
             import config as conf_module
@@ -207,12 +212,14 @@ sys.path: {sys.path}'''
             # system, chances are its the current locale, and not utf-8. Otherwise if it was copied, its probably
             # utf8. Either way, try the system FIRST because reading something like cp1251 in UTF-8 results in garbage
             # but the reverse results in an exception.
+            json_file = os.path.abspath(args.j)
             try:
-                data = json.load(open(args.j))
+                with open(json_file) as file_handle:
+                    data = json.load(file_handle)
             except UnicodeDecodeError:
-                data = json.load(open(args.j, encoding='utf-8'))
-
-            config.set('querytime', int(getmtime(args.j)))
+                with open(json_file, encoding='utf-8') as file_handle:
+                    data = json.load(file_handle)
+            config.set('querytime', int(os.path.getmtime(args.j)))
 
         else:
             # Get state from latest Journal file
@@ -255,10 +262,8 @@ sys.path: {sys.path}'''
                     for idx, cmdr in enumerate(cmdrs):
                         if cmdr.lower() == args.p.lower():
                             break
-
                     else:
                         raise companion.CredentialsError()
-
                 companion.session.login(cmdrs[idx], monitor.is_beta)
 
             else:
@@ -292,9 +297,7 @@ sys.path: {sys.path}'''
                 logger.trace_if('capi.worker', f'Failed Request: {capi_response.message}')
                 if capi_response.exception:
                     raise capi_response.exception
-
-                else:
-                    raise ValueError(capi_response.message)
+                raise ValueError(capi_response.message)
 
             logger.trace_if('capi.worker', 'Answer is not a Failure')
             if not isinstance(capi_response, companion.EDMCCAPIResponse):
@@ -366,20 +369,19 @@ sys.path: {sys.path}'''
         else:
             print(deep_get(data, 'lastSystem', 'name', default='Unknown'))
 
-        if (args.m or args.o or args.s or args.n or args.j):
+        if args.m or args.o or args.s or args.n or args.j:
             if not data['commander'].get('docked'):
                 logger.error("Can't use -m, -o, -s, -n or -j because you're not currently docked!")
                 return
 
-            elif not deep_get(data, 'lastStarport', 'name'):
+            if not deep_get(data, 'lastStarport', 'name'):
                 logger.error("No data['lastStarport']['name'] from CAPI")
                 sys.exit(EXIT_LAGGING)
 
             # Ignore possibly missing shipyard info
-            elif not (data['lastStarport'].get('commodities') or data['lastStarport'].get('modules')):
+            if not (data['lastStarport'].get('commodities') or data['lastStarport'].get('modules')):
                 logger.error("No commodities or outfitting (modules) in CAPI data")
                 return
-
         else:
             return
 
@@ -410,8 +412,8 @@ sys.path: {sys.path}'''
             else:
                 logger.error("Station doesn't supply outfitting")
 
-        if (args.s or args.n) and not args.j and not \
-                data['lastStarport'].get('ships') and data['lastStarport']['services'].get('shipyard'):
+        if ((args.s or args.n) and not args.j and not data['lastStarport'].get('ships')
+                and data['lastStarport']['services'].get('shipyard')):
 
             # Retry for shipyard
             sleep(SERVER_RETRY)
@@ -462,12 +464,12 @@ sys.path: {sys.path}'''
             except Exception:
                 logger.exception('Failed to send data to EDDN')
 
-    except companion.ServerError:
-        logger.exception('Frontier CAPI Server returned an error')
-        sys.exit(EXIT_SERVER)
-
     except companion.ServerConnectionError:
         logger.exception('Exception while contacting server')
+        sys.exit(EXIT_SERVER)
+
+    except companion.ServerError:
+        logger.exception('Frontier CAPI Server returned an error')
         sys.exit(EXIT_SERVER)
 
     except companion.CredentialsError:
@@ -495,6 +497,10 @@ sys.path: {sys.path}'''
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        check_for_fdev_updates(silent=True)
+        main()
+    except KeyboardInterrupt:
+        logger.info("Ctrl+C Detected, Attempting Clean Shutdown")
     logger.debug('Exiting')
     sys.exit(EXIT_SUCCESS)
