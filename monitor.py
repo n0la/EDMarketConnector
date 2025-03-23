@@ -141,6 +141,10 @@ class EDLogs(FileSystemEventHandler):
             'ShipType':           None,
             'HullValue':          None,
             'ModulesValue':       None,
+            'UnladenMass':        None,
+            'CargoCapacity':      None,
+            'MaxJumpRange':       None,
+            'FuelCapacity':       None,
             'Rebuy':              None,
             'Modules':            None,
             'CargoJSON':          None,  # The raw data from the last time cargo.json was read
@@ -175,6 +179,13 @@ class EDLogs(FileSystemEventHandler):
             'StationName':        None,
 
             'NavRoute':           None,
+            'Powerplay':      {
+                'Power':          None,
+                'Rank':           None,
+                'Merits':         None,
+                'Votes':          None,
+                'TimePledged':    None,
+            },
         }
 
     def start(self, root: 'tkinter.Tk') -> bool:  # noqa: CCR001
@@ -337,9 +348,9 @@ class EDLogs(FileSystemEventHandler):
 
     def on_created(self, event: 'FileSystemEvent') -> None:
         """Watchdog callback when, e.g. client (re)started."""
-        if not event.is_directory and self._RE_LOGFILE.search(basename(event.src_path)):
+        if not event.is_directory and self._RE_LOGFILE.search(str(basename(event.src_path))):
 
-            self.logfile = event.src_path
+            self.logfile = event.src_path  # type: ignore
 
     def worker(self) -> None:  # noqa: C901, CCR001
         """
@@ -680,6 +691,11 @@ class EDLogs(FileSystemEventHandler):
                 self.state['ShipType'] = self.canonicalise(entry['Ship'])
                 self.state['HullValue'] = entry.get('HullValue')  # not present on exiting Outfitting
                 self.state['ModulesValue'] = entry.get('ModulesValue')  # not present on exiting Outfitting
+                self.state['UnladenMass'] = entry.get('UnladenMass')
+                self.state['CargoCapacity'] = entry.get('CargoCapacity')
+                self.state['MaxJumpRange'] = entry.get('MaxJumpRange')
+                self.state["FuelCapacity"] = {name: entry.get("FuelCapacity", {}).get(name) for name in
+                                              ("Main", "Reserve")}
                 self.state['Rebuy'] = entry.get('Rebuy')
                 # Remove spurious differences between initial Loadout event and subsequent
                 self.state['Modules'] = {}
@@ -710,8 +726,8 @@ class EDLogs(FileSystemEventHandler):
                     'Ship': entry["Ship"],
                     'ShipName': entry['ShipName'],
                     'ShipIdent': entry['ShipIdent'],
-                    'HullValue': entry['HullValue'],
-                    'ModulesValue': entry['ModulesValue'],
+                    'HullValue': entry.get('HullValue'),  # type: ignore
+                    'ModulesValue': entry.get('ModulesValue'),  # type: ignore
                     'Rebuy': entry['Rebuy'],
                     'MaxJumpRange': entry['MaxJumpRange'],
                     'UnladenMass': entry['UnladenMass'],
@@ -1830,6 +1846,13 @@ class EDLogs(FileSystemEventHandler):
                 # There should be a `Backpack` event as you 'come to' in the
                 # new location, so no need to zero out BackPack here.
 
+            elif event_type == 'powerplay':
+                self.state['Powerplay']['Power'] = entry.get('Power', '')
+                self.state['Powerplay']['Rank'] = entry.get('Rank', 0)
+                self.state['Powerplay']['Merits'] = entry.get('Merits', 0)
+                self.state['Powerplay']['Votes'] = entry.get('Votes', 0)
+                self.state['Powerplay']['TimePledged'] = entry.get('TimePledged', 0)
+
             return entry
 
         except Exception as ex:
@@ -2151,7 +2174,7 @@ class EDLogs(FileSystemEventHandler):
             try:
                 with p.oneshot():
                     if p.status() not in [psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING]:
-                        raise psutil.NoSuchProcess
+                        raise psutil.NoSuchProcess(p.pid)
             except psutil.NoSuchProcess:
                 # Process likely expired
                 self.running_process = None
